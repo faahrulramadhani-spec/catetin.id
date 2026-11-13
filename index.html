@@ -94,6 +94,11 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .bar i{display:block;height:100%;background:var(--teal);border-radius:999px}
 .bar i.mid{background:var(--mustard)}
 .bar i.over{background:var(--tomat)}
+.dr-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:700}
+.dr-tag{margin-left:auto;font-size:11px;font-weight:700;color:#8a6a10;background:#FCEBCB;padding:3px 8px;border-radius:999px}
+.dr-b{display:flex;gap:8px;margin-top:10px}
+.dr-b button{flex:1;padding:9px 6px;border-radius:12px;font-weight:700;font-size:14px}
+.dr-x{color:var(--tomat);background:var(--soft)}.dr-e{background:var(--soft);color:var(--ink)}.dr-s{background:var(--acc);color:#fff}
 .bar.thin{height:5px;margin-top:5px}
 .tot{font-size:13px;color:var(--muted);margin:2px 0 10px}
 .akr{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:10px 0}
@@ -1731,8 +1736,11 @@ function prosesAntri(){
   if (S.pending) return;
   var q = S.antri;
   if (!q || !q.list.length) {
-    if (q && q.total > 1) {
-      bot('🧾 Selesai: <b>' + q.ok + ' dari ' + q.total + '</b> tercatat' + (q.keluar ? ', total pengeluaran <b>' + rp(q.keluar) + '</b>' : '') + (q.masuk ? ', pemasukan <b>' + rp(q.masuk) + '</b>' : '') + '.');
+    var nd = q ? q.drafts.filter(function(id){ return S.draft && S.draft[id]; }) : [];
+    if (q && nd.length > 1) {
+      var tk = 0; nd.forEach(function(id){ var t = S.draft[id].t; if (t.jenis === 'Pengeluaran') tk += t.jumlah; });
+      bot('🧾 Ada <b>' + nd.length + ' catatan</b>' + (tk ? ', total pengeluaran <b>' + rp(tk) + '</b>' : '') + '. Cek dulu, lalu simpan.<div class="chips"><button class="chip" data-act="d-semua">✓ Simpan semua</button></div>');
+      S.ringkasIdx = S.chat.length - 1;
     }
     S.antri = null; return;
   }
@@ -1746,7 +1754,7 @@ function mulaiAntri(text){
   var global = bacaTanggal(text), segs = pecahPesan(text);
   var list = segs.map(function(sg){ var tg = bacaTanggal(sg); return {teks: (tg ? sg.replace(tg.re, ' ') : (global ? sg.replace(global.re, ' ') : sg)).replace(/\s+/g, ' ').trim(), tgl: tg ? tg.tgl : (global ? global.tgl : '')}; }).filter(function(x){ return x.teks.replace(/[^a-z0-9]/gi, '').length > 1 && !/^(hari ini|tadi|barusan)$/i.test(x.teks); });
   if (!list.length) { bot('Belum ada yang bisa kucatat. Coba tulis misalnya <b>beli bensin 20rb pake tunai</b>.'); return; }
-  S.antri = {list:list, total:list.length, ok:0, keluar:0, masuk:0};
+  S.antri = {list:list, total:list.length, drafts:[]};
   if (list.length > 1) bot('Aku menemukan <b>' + list.length + ' catatan</b>, kuproses satu per satu ya.' + (global && global.tgl !== today() ? ' Tanggal: <b>' + tglPanjang(global.tgl) + '</b>.' : ''));
   prosesAntri();
 }
@@ -1767,8 +1775,8 @@ function migrasiAng(){
     var bt = Number(x.batas) || 0, subs = (x.subs || []).filter(function(id){ return SB[id]; }); if (!bt || !subs.length) return;
     var bulan = x.periode === 'harian' ? bt * 30 : x.periode === 'mingguan' ? Math.round(bt * 30 / 7 / 1000) * 1000 : bt;
     var ks = {}; subs.forEach(function(id){ ks[SB[id].k.id] = SB[id].k; }); var kids = Object.keys(ks);
-    if (subs.length === 1 && !Number(SB[subs[0]].s.batas) && !batasKantong(SB[subs[0]].k)) { SB[subs[0]].s.batas = bulan; hasil.push(x.nama + ' → ' + SB[subs[0]].s.nama + ' ' + singkat(bulan) + '/bln'); }
-    else if (kids.length === 1 && !batasKantong(ks[kids[0]])) { ks[kids[0]].batasK = bulan; hasil.push(x.nama + ' → ' + ks[kids[0]].nama + ' ' + singkat(bulan) + '/bln'); }
+    if (subs.length === 1 && !Number(SB[subs[0]].s.batas) && !batasKantong(SB[subs[0]].k)) { SB[subs[0]].s.batas = bulan; if (x.akun === S.me) hasil.push(x.nama + ' → ' + SB[subs[0]].s.nama + ' ' + singkat(bulan) + '/bln'); }
+    else if (kids.length === 1 && !batasKantong(ks[kids[0]])) { ks[kids[0]].batasK = bulan; if (x.akun === S.me) hasil.push(x.nama + ' → ' + ks[kids[0]].nama + ' ' + singkat(bulan) + '/bln'); }
   });
   S.cfg.mig2 = true; S.migInfo = hasil;
   return true;
@@ -1853,16 +1861,49 @@ function simpanDariChat(p){
   var t = {akun:p.akun, tanggal:p.tanggal || today(), jenis:p.jenis, jumlah:p.jumlah, kantong:p.kantong, sub:p.sub, dompet:p.dompet,
            tujuan:p.tujuan || '', target:p.target || '', toko:p.toko || '', catatan:p.text, oleh:S.me};
   if (p.jenis === 'Transfer') { t.kantong = ''; t.sub = ''; t.toko = ''; if (D[t.dompet]) t.akun = D[t.dompet].akun; }
-  S.chat.push({from:'bot', html:'<span class="typing">Menyimpan…</span>'}); if (S.view === 'chat') renderChat();
-  var idx = S.chat.length - 1;
-  simpanTx(t).then(function(){
+  S.draft = S.draft || {};
+  var did = uid('d');
+  S.chat.push({from:'bot', html:''});
+  S.draft[did] = {t:t, p:p, idx:S.chat.length - 1};
+  if (S.antri) S.antri.drafts.push(did);
+  gambarDraft(did);
+  prosesAntri();
+}
+function gambarDraft(did){
+  var d = S.draft[did], t = d.t, p = d.p;
+  S.chat[d.idx] = {from:'bot', html:'<div class="dr-h">📝 Cek dulu' + (p.urut ? ' <span class="hint">(' + p.urut + ')</span>' : '') + '<span class="dr-tag">belum tersimpan</span></div>' +
+    '<div class="rec">' + txIco(t, 40) + '<div><b>' + h(txJudul(t)) + '</b> · <span class="' + (t.jenis === 'Pemasukan' ? 'in' : t.jenis === 'Pengeluaran' ? 'out' : '') + '">' + rp(t.jumlah) + '</span><br><span class="hint">' + h(txSub(t)) + (t.tanggal !== today() ? ' · ' + h(tglPanjang(t.tanggal)) : '') + '</span></div></div>' +
+    '<div class="dr-b"><button class="dr-x" data-act="d-hapus" data-id="' + did + '">Hapus</button><button class="dr-e" data-act="d-ubah" data-id="' + did + '">✏️ Ubah</button><button class="dr-s" data-act="d-simpan" data-id="' + did + '">Simpan</button></div>'};
+  if (S.view === 'chat') renderChat();
+}
+function simpanDraft(did){
+  var d = S.draft && S.draft[did]; if (!d || d.busy) return Promise.resolve();
+  d.busy = true;
+  var t = d.t, p = d.p;
+  S.chat[d.idx] = {from:'bot', html:'<span class="typing">Menyimpan…</span>'}; if (S.view === 'chat') renderChat();
+  return simpanTx(t).then(function(){
+    delete S.draft[did];
     var ingat = belajar(p);
-    var q = S.antri; if (q) { q.ok++; if (t.jenis === 'Pengeluaran') q.keluar += t.jumlah; else if (t.jenis === 'Pemasukan') q.masuk += t.jumlah; }
-    S.chat[idx] = {from:'bot', html:'✓ Tercatat' + (p.urut ? ' <span class="hint">(' + p.urut + ')</span>' : '') + (t.tanggal !== today() ? ' · <b>' + h(tglPanjang(t.tanggal)) + '</b>' : '') + '<div class="rec">' + txIco(t, 40) + '<div><b>' + h(txJudul(t)) + '</b> · <span class="' + (t.jenis === 'Pemasukan' ? 'in' : t.jenis === 'Pengeluaran' ? 'out' : '') + '">' + rp(t.jumlah) + '</span><br><span class="hint">' + h(txSub(t)) + '</span></div></div>' +
+    S.chat[d.idx] = {from:'bot', html:'✓ Tercatat' + (t.tanggal !== today() ? ' · <b>' + h(tglPanjang(t.tanggal)) + '</b>' : '') + '<div class="rec">' + txIco(t, 40) + '<div><b>' + h(txJudul(t)) + '</b> · <span class="' + (t.jenis === 'Pemasukan' ? 'in' : t.jenis === 'Pengeluaran' ? 'out' : '') + '">' + rp(t.jumlah) + '</span><br><span class="hint">' + h(txSub(t)) + '</span></div></div>' +
       infoBudget(t) + ingat + '<button class="undo" data-act="undo" data-id="' + h(t.id) + '">Batalkan</button>'};
     if (S.view === 'chat') renderChat();
-    prosesAntri();
-  }).catch(function(e){ S.chat[idx] = {from:'bot', html:'Gagal menyimpan: ' + h(msg(e))}; if (S.view === 'chat') renderChat(); prosesAntri(); });
+  }).catch(function(e){ d.busy = false; gambarDraft(did); toast('Gagal menyimpan: ' + msg(e)); });
+}
+function hapusDraft(did){
+  var d = S.draft && S.draft[did]; if (!d) return;
+  delete S.draft[did];
+  S.chat[d.idx] = {from:'bot', html:'<span class="hint">🗑️ Dihapus, tidak dicatat: ' + h(txJudul(d.t)) + ' · ' + rp(d.t.jumlah) + '</span>'};
+  if (S.view === 'chat') renderChat();
+}
+function ubahDraft(did){
+  var d = S.draft && S.draft[did]; if (!d) return;
+  var t = d.t;
+  bukaTambah({akun:d.p.akun, jenis:t.jenis, jumlah:t.jumlah, kantong:t.kantong, sub:t.sub, dompet:t.dompet, tujuan:t.tujuan, target:t.target, tanggal:t.tanggal, catatan:t.catatan, toko:t.toko, draft:did});
+}
+function simpanSemuaDraft(){
+  var ids = Object.keys(S.draft || {}), i = 0;
+  if (!ids.length) return toast('Tidak ada yang perlu disimpan');
+  (function next(){ if (i >= ids.length) { toast(ids.length + ' catatan tersimpan ✓'); if (S.ringkasIdx != null && S.chat[S.ringkasIdx]) { S.chat[S.ringkasIdx] = {from:'bot', html:'✓ Semua catatan sudah tersimpan.'}; S.ringkasIdx = null; if (S.view === 'chat') renderChat(); } return; } simpanDraft(ids[i++]).then(next); })();
 }
 function simpanTx(t){
   t.ringkasan = txRingkasan(t);
@@ -1921,7 +1962,7 @@ function bukaTambah(pre){
 }
 function renderTambah(){
   var x = S.add, a = x.akun, base = A[a].bersama ? S.me : a;
-  var html = head('Catat ' + A[a].nama);
+  var html = head((x.draft ? 'Ubah catatan · ' : 'Catat ') + A[a].nama, x.draft ? 'Perbaiki yang salah, lalu Simpan untuk mencatat.' : '');
   html += '<div class="seg" style="margin-top:8px">' + ['Pengeluaran','Pemasukan','Transfer'].map(function(j){ return '<button data-act="a-jenis" data-v="' + j + '" class="' + (x.jenis === j ? 'on' : '') + '">' + j + '</button>'; }).join('') + '</div>';
   html += '<label class="label">Nominal</label><input class="amount num" id="a-jumlah" inputmode="numeric" data-money placeholder="Rp0" value="' + (x.jumlah ? x.jumlah.toLocaleString('id-ID') : '') + '">';
   if (x.jenis !== 'Transfer') {
@@ -1961,6 +2002,7 @@ function simpanTambah(){
   var t = {akun: tr && D[x.dompet] ? D[x.dompet].akun : x.akun, tanggal:x.tanggal, jenis:x.jenis, jumlah:x.jumlah,
            kantong: tr ? '' : x.kantong, sub: tr ? '' : x.sub, dompet:x.dompet, tujuan: tr ? x.tujuan : '', target: tr ? x.target : '',
            toko: tr ? '' : (x.toko || ''), catatan:x.catatan, oleh:S.me};
+  if (x.draft && S.draft && S.draft[x.draft]) { var dd = S.draft[x.draft]; dd.t = t; tutup(); simpanDraft(x.draft); return; }
   var b = $('a-btn'); b.disabled = true; b.textContent = 'Menyimpan…';
   simpanTx(t).then(function(){
     tutup(); render();
@@ -2696,6 +2738,10 @@ document.addEventListener('click', function(e){
       call('hapusTx', id).then(function(){ S.tx = S.tx.filter(function(t){ return t.id !== id; }); bot('Oke, catatan tadi sudah dibatalkan.'); })
         .catch(function(e){ el.disabled = false; el.textContent = 'Batalkan'; toast(msg(e)); });
       break;
+    case 'd-simpan': simpanDraft(id); break;
+    case 'd-hapus': hapusDraft(id); break;
+    case 'd-ubah': ubahDraft(id); break;
+    case 'd-semua': el.disabled = true; simpanSemuaDraft(); break;
     case 'p-batal': S.pending = null; bot('Oke, dibatalkan.'); prosesAntri(); break;
     case 'p-batal-semua': S.pending = null; S.antri = null; bot('Oke, semua dibatalkan.'); break;
     case 'p-jenis': if (!p) break; p.jenis = p.jenis === 'Pemasukan' ? 'Pengeluaran' : 'Pemasukan'; lanjut(); break;
