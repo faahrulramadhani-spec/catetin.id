@@ -81,7 +81,15 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--sh)}
 .ic{position:relative;display:inline-grid;place-items:center;flex:none;border-radius:14px;overflow:hidden;line-height:1;background:var(--soft)}
 .ic.ini{color:#fff;font-weight:800;letter-spacing:.02em}
-.ic img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff}
+.ic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
+.crop{position:fixed;inset:0;z-index:60;background:rgba(20,16,26,.82);display:flex;align-items:center;justify-content:center;padding:16px}
+.cr-box{width:100%;max-width:360px;background:var(--bg);border-radius:24px;padding:18px 16px 14px}
+.cr-t b{display:block;font-size:18px}.cr-t small{display:block;color:var(--muted);font-size:13px;margin:4px 0 14px}
+.cr-stage{position:relative;width:min(300px,78vw);aspect-ratio:1;margin:0 auto;overflow:hidden;border-radius:16px;background:#222;touch-action:none;cursor:grab}
+.cr-stage img{position:absolute;left:0;top:0;max-width:none;transform-origin:0 0;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.cr-mask{position:absolute;inset:0;border-radius:30%;box-shadow:0 0 0 400px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.9);pointer-events:none}
+.cr-z{display:flex;align-items:center;gap:10px;margin:14px 6px 4px;color:var(--muted);font-weight:700}.cr-z input{flex:1;accent-color:var(--acc)}
+.cr-b{display:flex;gap:10px}.cr-b .btn{flex:1;margin-top:10px}
 .bar{height:8px;border-radius:999px;background:var(--soft);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--teal);border-radius:999px}
 .bar i.mid{background:var(--mustard)}
@@ -254,7 +262,7 @@ nav svg{width:25px;height:25px}
 .swatches{display:flex;flex-wrap:wrap;gap:10px}
 .swatches button{width:34px;height:34px;border-radius:50%}
 .swatches button.on{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--ink)}
-.icon-edit{display:flex;align-items:center;gap:12px}
+.icon-edit{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .icon-edit label{font-size:14px;font-weight:700;padding:9px 14px;border:1.5px solid var(--line);border-radius:999px;background:var(--card);cursor:pointer}
 .icon-edit .up{background:var(--acc);border-color:var(--acc);color:#fff;padding:11px 16px}
 .pv{position:sticky;top:-12px;z-index:3;box-shadow:0 8px 14px -12px rgba(43,36,51,.35);display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--soft);border-radius:24px;padding:20px 16px 16px;margin:4px 0 8px}
@@ -2094,6 +2102,7 @@ function fieldHtml(f, v){
   if (f.type === 'kata') return '<textarea class="inp" id="' + id + '" placeholder="pisahkan dengan koma">' + h((v || []).join(', ')) + '</textarea>';
   if (f.type === 'ikon') return '<input type="hidden" id="' + id + '" value="' + h(v || '') + '"><div class="icon-edit">' +
     '<label class="up">📷 ' + (v ? 'Ganti foto' : 'Pilih foto dari galeri') + '<input type="file" accept="image/*" data-ikon="' + f.k + '" style="display:none"></label>' +
+    '<button type="button" class="chip plain' + (v ? '' : ' hidden') + '" id="crop_' + f.k + '" data-act="crop-ikon" data-k="' + f.k + '">✂️ Atur posisi</button>' +
     '<button type="button" class="chip plain' + (v ? '' : ' hidden') + '" id="del_' + f.k + '" data-act="hapus-ikon" data-k="' + f.k + '">Hapus foto</button></div>';
   return '<input class="inp" id="' + id + '" value="' + h(v == null ? '' : v) + '"' + (f.max ? ' maxlength="' + f.max + '"' : '') + (f.ph ? ' placeholder="' + h(f.ph) + '"' : '') + '>';
 }
@@ -2257,24 +2266,71 @@ function simpanAng(){
 function unggahIkon(input){
   var k = input.getAttribute('data-ikon'), file = input.files && input.files[0]; if (!file) return;
   var rd = new FileReader();
-  rd.onload = function(){
-    var img = new Image();
-    img.onload = function(){
-      var N = 120, c = document.createElement('canvas'); c.width = N; c.height = N;
-      var g = c.getContext('2d'), sc = Math.min(N / img.width, N / img.height);
-      var w = img.width * sc, hh = img.height * sc;
-      g.drawImage(img, (N - w) / 2, (N - hh) / 2, w, hh);
-      var data = c.toDataURL('image/png');
-      if (data.length > 45000) { var c2 = document.createElement('canvas'); c2.width = N; c2.height = N; var g2 = c2.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, N, N); g2.drawImage(c, 0, 0); data = c2.toDataURL('image/jpeg', .85); }
-      if ($('pv-ic')) $('pv-ic').innerHTML = '<span class="typing">Mengunggah…</span>';
-      call('simpanIkon', data).then(function(id){
-        S.ikon[id] = data; $('f_' + k).value = id; if ($('del_' + k)) $('del_' + k).classList.remove('hidden'); if (input.parentNode && input.parentNode.firstChild.nodeType === 3) input.parentNode.firstChild.nodeValue = '📷 Ganti foto'; updPreview(); toast('Foto terpasang. Jangan lupa Simpan.');
-      }).catch(function(e){ updPreview(); toast(msg(e)); });
-    };
-    img.onerror = function(){ toast('Gambar tidak bisa dibaca'); };
-    img.src = rd.result;
-  };
+  rd.onload = function(){ input.value = ''; bukaCrop(rd.result, function(data){ pasangIkon(k, data, input); }); };
   rd.readAsDataURL(file);
+}
+function aturUlangIkon(k){
+  var id = $('f_' + k) && $('f_' + k).value; if (!id || !S.ikon[id]) return;
+  bukaCrop(S.ikon[id], function(data){ pasangIkon(k, data); });
+}
+function pasangIkon(k, data, input){
+  if ($('pv-ic')) $('pv-ic').innerHTML = '<span class="typing">Mengunggah…</span>';
+  call('simpanIkon', data).then(function(id){
+    S.ikon[id] = data; $('f_' + k).value = id;
+    ['del_', 'crop_'].forEach(function(x){ if ($(x + k)) $(x + k).classList.remove('hidden'); });
+    var lb = document.querySelector('[data-ikon="' + k + '"]'); if (lb && lb.parentNode.firstChild.nodeType === 3) lb.parentNode.firstChild.nodeValue = '📷 Ganti foto';
+    updPreview(); toast('Foto terpasang. Jangan lupa Simpan.');
+  }).catch(function(e){ updPreview(); toast(msg(e)); });
+}
+/* pemotong foto: geser & cubit, hasil selalu penuh (tanpa sisi putih) */
+function bukaCrop(src, done){
+  var img = new Image();
+  img.onload = function(){
+    var ov = document.createElement('div'); ov.className = 'crop';
+    ov.innerHTML = '<div class="cr-box"><div class="cr-t"><b>Atur foto</b><small>Geser untuk memindah, cubit atau pakai slider untuk zoom.</small></div>' +
+      '<div class="cr-stage"><img alt="" draggable="false"><span class="cr-mask"></span></div>' +
+      '<div class="cr-z"><span>−</span><input type="range" min="1" max="5" step="0.01" value="1"><span>+</span></div>' +
+      '<div class="cr-b"><button type="button" class="btn ghost" data-cr="0">Batal</button><button type="button" class="btn" data-cr="1">Pakai foto</button></div></div>';
+    document.body.appendChild(ov);
+    var st = ov.querySelector('.cr-stage'), im = ov.querySelector('img'), rg = ov.querySelector('input');
+    im.src = src;
+    var W = img.naturalWidth, H = img.naturalHeight, Z = st.clientWidth, base = Math.max(Z / W, Z / H), z = 1, x, y;
+    function sc(){ return base * z; }
+    function klem(){ var s2 = sc(); x = Math.min(0, Math.max(Z - W * s2, x)); y = Math.min(0, Math.max(Z - H * s2, y)); }
+    function gambar(){ klem(); var s2 = sc(); im.style.width = W * s2 + 'px'; im.style.height = H * s2 + 'px'; im.style.transform = 'translate(' + x + 'px,' + y + 'px)'; rg.value = z; }
+    function zoomKe(nz, cx, cy){ nz = Math.max(1, Math.min(5, nz)); var s0 = sc(); z = nz; var s1 = sc(); x = cx - (cx - x) * s1 / s0; y = cy - (cy - y) * s1 / s0; gambar(); }
+    x = (Z - W * base) / 2; y = (Z - H * base) / 2; gambar();
+    var pt = {}, last = null;
+    function info(){ var ks = Object.keys(pt), r = st.getBoundingClientRect();
+      if (ks.length >= 2) { var a = pt[ks[0]], b = pt[ks[1]]; return {n:2, d:Math.hypot(a.x - b.x, a.y - b.y), cx:(a.x + b.x) / 2 - r.left, cy:(a.y + b.y) / 2 - r.top}; }
+      if (ks.length === 1) return {n:1, cx:pt[ks[0]].x, cy:pt[ks[0]].y}; return null; }
+    st.addEventListener('pointerdown', function(e){ st.setPointerCapture(e.pointerId); pt[e.pointerId] = {x:e.clientX, y:e.clientY}; last = info(); e.preventDefault(); });
+    st.addEventListener('pointermove', function(e){
+      if (!pt[e.pointerId]) return; pt[e.pointerId] = {x:e.clientX, y:e.clientY}; var now = info(); if (!now || !last) return;
+      if (now.n === 2 && last.n === 2) { zoomKe(z * now.d / last.d, now.cx, now.cy); x += now.cx - last.cx; y += now.cy - last.cy; gambar(); }
+      else if (now.n === 1 && last.n === 1) { x += now.cx - last.cx; y += now.cy - last.cy; gambar(); }
+      last = now;
+    });
+    function lepas(e){ delete pt[e.pointerId]; last = info(); }
+    st.addEventListener('pointerup', lepas); st.addEventListener('pointercancel', lepas);
+    st.addEventListener('wheel', function(e){ e.preventDefault(); var r = st.getBoundingClientRect(); zoomKe(z * (e.deltaY < 0 ? 1.08 : 0.93), e.clientX - r.left, e.clientY - r.top); }, {passive:false});
+    rg.addEventListener('input', function(){ zoomKe(Number(rg.value), Z / 2, Z / 2); });
+    ov.addEventListener('click', function(e){
+      var b = e.target.closest('[data-cr]'); if (!b) return;
+      if (b.getAttribute('data-cr') === '1') {
+        var N = 160, c = document.createElement('canvas'); c.width = N; c.height = N; var g = c.getContext('2d'), s2 = sc();
+        g.imageSmoothingQuality = 'high';
+        g.drawImage(img, -x / s2, -y / s2, Z / s2, Z / s2, 0, 0, N, N);
+        var data = c.toDataURL('image/png');
+        if (data.length > 46000) { var c2 = document.createElement('canvas'); c2.width = N; c2.height = N; var g2 = c2.getContext('2d'); g2.fillStyle = '#fff'; g2.fillRect(0, 0, N, N); g2.drawImage(c, 0, 0);
+          for (var q = .9; q > .4; q -= .1) { data = c2.toDataURL('image/jpeg', q); if (data.length <= 46000) break; } }
+        done(data);
+      }
+      ov.remove();
+    });
+  };
+  img.onerror = function(){ toast('Gambar tidak bisa dibaca'); };
+  img.src = src;
 }
 
 /* =========================================================
@@ -2552,6 +2608,7 @@ document.addEventListener('click', function(e){
     case 'bulan': S.month = shiftM(S.month, +v); render(); break;
     case 'filter': S.filter = v; render(); break;
     case 'ang-per': S.angPer = v; render(); break;
+    case 'crop-ikon': aturUlangIkon(el.getAttribute('data-k')); break;
     case 'ang-tab': S.angTab = v; render(); break;
     case 'ang-buka': S.angBuka = S.angBuka || {}; S.angBuka[id] = !S.angBuka[id]; render(); break;
     case 'atur-ang-kat': bukaAturAngKat(id); break;
@@ -2657,7 +2714,7 @@ document.addEventListener('click', function(e){
     case 'edit-toko': editToko(id); break;
     case 'warna': $('f_' + el.getAttribute('data-k')).value = v; [].forEach.call(el.parentNode.children, function(c){ c.classList.toggle('on', c === el); }); updPreview(); break;
     case 'pick-icon': $('f_' + el.getAttribute('data-k')).value = v; [].forEach.call(el.parentNode.children, function(c){ c.classList.toggle('on', c === el); }); updPreview(); break;
-    case 'hapus-ikon': { var k = el.getAttribute('data-k'); $('f_' + k).value = ''; el.classList.add('hidden'); updPreview(); break; }
+    case 'hapus-ikon': { var k = el.getAttribute('data-k'); $('f_' + k).value = ''; el.classList.add('hidden'); if ($('crop_' + k)) $('crop_' + k).classList.add('hidden'); updPreview(); break; }
     case 'form-simpan': if (S.form) S.form.onSave(bacaForm()); break;
     // berdua
     case 'timeline': S.view = 'timeline'; render(); window.scrollTo(0, 0); break;
