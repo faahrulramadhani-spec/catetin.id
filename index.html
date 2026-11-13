@@ -923,7 +923,16 @@ function saldoMap(){
 function terkait(t, a){ return t.akun === a || (t.tujuan && D[t.tujuan] && D[t.tujuan].akun === a); }
 function urut(list){ return list.slice().sort(function(x, y){ return x.tanggal < y.tanggal ? 1 : x.tanggal > y.tanggal ? -1 : (y.dibuat || 0) - (x.dibuat || 0); }); }
 function jumlahBy(list, fn){ return list.reduce(function(a, t){ return a + (fn(t) ? t.jumlah : 0); }, 0); }
-function progresTarget(tid){ return S.tx.reduce(function(a, t){ if (t.target !== tid) return a; return a + (t.jenis === 'Pengeluaran' ? -t.jumlah : t.jumlah); }, 0); }
+function awalTarget(tg){
+  if (!tg) return 0;
+  if (tg.awal != null && tg.awal !== '') return Number(tg.awal) || 0;
+  var d = D[tg.dompet]; if (!d) return 0;
+  var sama = S.cfg.target.filter(function(x){ return x.dompet === tg.dompet; });
+  if (sama.length !== 1) return 0;
+  var dipakai = S.tx.some(function(t){ return t.dompet === d.id && t.jenis !== 'Transfer'; });
+  return dipakai ? 0 : Number(d.saldoAwal) || 0;
+}
+function progresTarget(tid){ return awalTarget(T[tid]) + S.tx.reduce(function(a, t){ if (t.target !== tid) return a; return a + (t.jenis === 'Pengeluaran' ? -t.jumlah : t.jumlah); }, 0); }
 function barCls(p){ return p >= 100 ? 'over' : p >= 75 ? 'mid' : ''; }
 function rentang(per, s){
   s = s || today();
@@ -2275,11 +2284,13 @@ function editTarget(id, pre){
       {k:'warna', label:'Warna', type:'color'}, {k:'nominal', label:'Target total (opsional)', type:'money', hint:'cth: dana darurat 6 juta'},
       {k:'mingguan', label:'Target setoran per minggu (opsional)', type:'money', hint:'Api tabungan menyala kalau total setoran seminggu mencapai target ini. Kosongkan = setoran berapa pun dihitung.'},
       {k:'dompet', label:'Uangnya disimpan di', type:'select', opts:opsi, hint:'Setor = pindah uang ke dompet ini. Bisa kantong Jago, rekening khusus, dll.'},
+      {k:'awal', label:'Sudah terkumpul sebelum pakai catetin (opsional)', type:'money', hint:'Tabungan lama yang sudah ada. Kalau dikosongkan dan dompetnya khusus untuk tujuan ini (tidak dipakai belanja), otomatis ikut saldo awal dompet.'},
       {k:'kata', label:'Kata kunci chat', type:'kata', hint:'cth: darurat, dana darurat'}, {k:'ikon', label:'Atau pakai foto sendiri', type:'ikon'}],
     onSave:function(d){
       if (!wajib(d, 'nama', 'Nama')) return;
       if (!(A[akunT] && A[akunT].bersama) && !d.dompet) return toast('Pilih dompet tempat tabungan disimpan');
       if (!d.kata || !d.kata.length) d.kata = [norm(d.nama).trim()];
+      if (!Number(d.awal)) delete d.awal; if (t0 && !d.awal) delete t0.awal;
       if (t0) Object.assign(t0, d); else S.cfg.target.push(Object.assign({id:uid('t'), akun: A[akunT] && A[akunT].bersama ? '' : akunT}, d));
       tutup(); simpanCfg(); render();
     },
