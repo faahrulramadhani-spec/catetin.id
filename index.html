@@ -110,7 +110,7 @@ main{max-width:600px;margin:0 auto;padding-bottom:130px}
 .h-v{display:flex;align-items:center;gap:10px;font-size:32px;font-weight:800;letter-spacing:-.02em;position:relative}
 .eye{width:34px;height:34px;display:grid;place-items:center;flex:none;color:inherit}
 .eye svg{width:22px;height:22px}
-.h-mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;position:relative}
+.h-mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;position:relative}
 .h-mini div{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.16);border-radius:16px;padding:10px 11px}
 .h-mini .ar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:800;font-size:15px}
 .h-mini small{display:block;font-size:11.5px;opacity:.85}
@@ -1372,9 +1372,12 @@ function heroHome(a, total, tab, masuk, keluar){
     '<div><span class="ar" style="background:#8C2F45;color:#fff">↑</span><span><small>Pengeluaran</small><b class="num">' + uang(keluar) + '</b></span></div></div></div>';
   // halaman 2: total saldo + dompet
   var p2 = '<div class="pg"><div class="h-l2"><span>Total saldo · ' + ds.length + ' dompet</span></div><div class="h-v num">' + uang(total) + eyeBtn() + '</div>' +
-    '<div class="h-sub">' + (tab > 0 ? 'termasuk tabungan ' + uang(tab) : 'semua dompet ' + h(A[a].nama)) + (utang < 0 ? ' · tagihan kredit ' + uang(-utang) : '') + '</div><div class="drow">' +
+    '<div class="h-sub">' + (tab > 0 ? 'termasuk tabungan ' + uang(tab) : 'semua dompet ' + h(A[a].nama)) + (utang < 0 && tab > 0 ? ' · tagihan kredit ' + uang(-utang) : '') + '</div><div class="drow">' +
     ds.map(function(d){ var v = sal[d.id] || 0; return '<button data-act="dompet-detail" data-id="' + h(d.id) + '">' + ico(d, 30) + '<span><small>' + h(d.nama) + '</small><b class="num">' + (S.hide ? 'Rp••••' : singkat(v)) + '</b></span></button>'; }).join('') +
-    '<button class="more" data-act="katalog">+ Tambah Dompet</button></div></div>';
+    '<button class="more" data-act="katalog">+ Tambah Dompet</button></div>' +
+    '<div class="h-mini"><div><span class="ar" style="background:#2E8C85;color:#fff">💵</span><span><small>Bebas dipakai</small><b class="num">' + uang(total - tab) + '</b></span></div>' +
+    (utang < 0 ? '<div><span class="ar" style="background:#8C2F45;color:#fff">💳</span><span><small>Tagihan kredit</small><b class="num">' + uang(-utang) + '</b></span></div>'
+               : '<div><span class="ar" style="background:#2C3E6B;color:#fff">🐷</span><span><small>Di tabungan</small><b class="num">' + uang(tab) + '</b></span></div>') + '</div></div>';
   html += '<div class="pager" id="pager">' + p1 + p2 + '</div><div class="dots"><i class="' + (pg === 0 ? 'on' : '') + '"></i><i class="' + (pg === 1 ? 'on' : '') + '"></i></div></div>';
   return html;
 }
