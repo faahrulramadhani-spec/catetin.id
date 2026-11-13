@@ -1,5 +1,5 @@
 /* catetin.id — service worker: simpan tampilan aplikasi supaya cepat & bisa dibuka tanpa sinyal */
-const VERSI = 'catetin-v5';
+const VERSI = 'catetin-v6';
 const SHELL = ['./', './index.html', './config.js', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

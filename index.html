@@ -86,6 +86,24 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .bar i{display:block;height:100%;background:var(--teal);border-radius:999px}
 .bar i.mid{background:var(--mustard)}
 .bar i.over{background:var(--tomat)}
+.bar.thin{height:5px;margin-top:5px}
+.tot{font-size:13px;color:var(--muted);margin:2px 0 10px}
+.akr{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:10px 0}
+.akr+.akr,.aks+.akr{border-top:1px solid var(--line)}
+.akr .mid,.aksr .mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.akr .t,.aksr .t{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.akr .t small,.aksr .t small{color:var(--muted);font-size:12.5px;white-space:nowrap}
+.akr .s{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.akr .s .out{color:var(--tomat);font-weight:700}
+.aks{margin:0 0 10px 50px;padding:6px 12px;background:var(--soft);border-radius:14px}
+.aksr{display:flex;gap:10px;align-items:center;padding:7px 0;font-size:14px}
+.aksr+.aksr{border-top:1px dashed var(--line)}
+.angin{display:flex;gap:10px;align-items:center;padding:9px 0}
+.angin+.angin{border-top:1px solid var(--line)}
+.angin .mid{flex:1;min-width:0;display:flex;flex-direction:column}
+.angin .mid small{color:var(--muted);font-size:12px}
+.angin .inp{width:118px;text-align:right;margin:0}
+.angtot{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;margin:10px 0 4px;border-radius:14px;background:var(--soft);font-weight:700}
 .in{color:var(--teal)} .out{color:var(--maroon)}
 .empty{color:var(--muted);text-align:center;padding:22px 8px;font-size:14px}
 .toast{position:fixed;left:50%;bottom:112px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 16px;border-radius:14px;font-size:14px;z-index:40;max-width:90%;text-align:center;box-shadow:var(--sh)}
@@ -1060,6 +1078,7 @@ function terimaAwal(d, dariCache){
   if (!d || d.status !== 'ok') return;
   var awal = !S.cfg;
   terima(d); S.me = d.me; S.email = d.email; siapkanSeen();
+  if (!dariCache && migrasiSub()) simpanCfg(true);
   if (!S.akun || !A[S.akun]) S.akun = S.me;
   if (!S.month) S.month = ym(today());
   if (!S.chat.length) sapa();
@@ -1320,6 +1339,14 @@ function insightList(a){
     else if (p >= 80) out.push(['🟠', '#FCEBCB', '<b>' + h(x.nama) + '</b> sudah terpakai <b>' + p + '%</b> ' + labelPer(x.periode, 2).toLowerCase() + '.']);
     else if (x.periode === 'bulanan' && p < 60) out.push(['👍', '#E2F0EE', '<b>' + h(x.nama) + '</b> masih aman, baru terpakai <b>' + p + '%</b> dari batas bulanan.']);
   });
+  var mNow = ym(t0);
+  kantongBeranggaran(a).forEach(function(k){
+    var bt = batasKantong(k), pk = pakaiKantong(k, mNow), p = Math.round(pk / bt * 100);
+    var lewat = (k.sub || []).filter(function(sb){ return Number(sb.batas) && pakaiSub(sb, mNow) > Number(sb.batas); });
+    if (p >= 100) out.push(['⚠️', '#FBE3DD', 'Anggaran <b>' + h(k.nama) + '</b> bulan ini lewat <b>' + rp(pk - bt) + '</b>.']);
+    else if (lewat.length) out.push(['⚠️', '#FBE3DD', '<b>' + lewat.map(function(sb){ return h(sb.nama); }).join(', ') + '</b> sudah melewati batasnya (' + h(k.nama) + ').']);
+    else if (p >= 80) out.push(['🟠', '#FCEBCB', '<b>' + h(k.nama) + '</b> sudah terpakai <b>' + p + '%</b> bulan ini, sisa ' + rp(bt - pk) + '.']);
+  });
   targetMilik(a).forEach(function(t){
     var nom = Number(t.nominal) || 0, k = Math.max(0, progresTarget(t.id));
     if (nom && k < nom && k / nom >= 0.75) out.push(['🎯', '#E3EEF4', 'Tinggal <b>' + rp(nom - k) + '</b> lagi untuk <b>' + h(t.nama) + '</b>. Sedikit lagi!']);
@@ -1339,12 +1366,6 @@ function kartuWallet(a){
     ds.map(function(d){ var s = sal[d.id] || 0; return '<button class="w" data-act="dompet-detail" data-id="' + h(d.id) + '">' + ico(d, 36) + '<b>' + h(d.nama) + '</b><small class="num ' + (s < 0 ? 'out' : '') + '">' + uang(s) + '</small></button>'; }).join('') +
     '<button class="w add" data-act="katalog"><span class="ic" style="width:36px;height:36px;border-radius:11px;background:var(--soft);color:var(--muted)">' + svgIc('wallet', 18) + '</span><b>Tambah</b><small>bank, e-wallet</small></button></div>';
 }
-function kartuAnggaran(a){
-  var angs = anggaranAkun(a);
-  return '<div class="card"><div class="h2r"><h3>Anggaran</h3><button class="lnk2" data-act="nav" data-v="anggaran">Semua ›</button></div>' +
-    (angs.length ? angs.slice(0, 3).map(angRow).join('') : '<div class="empty">Belum ada anggaran. <button class="lnk2" data-act="edit-ang" data-id="">+ Buat anggaran</button></div>') + '</div>';
-}
-
 var KARTU = [['streak','Api streak (catat & nabung)'],['tabungan','Tujuan menabung'],['donat','Ke mana uangmu'],['tujuh','Grafik 7 hari'],['insight','Catatan untukmu'],['anggaran','Anggaran'],['terbaru','Transaksi terbaru']];
 function urutanKartu(){
   var u = S.ui.kartu, ada = {};
@@ -1600,18 +1621,151 @@ function momenBaru(m){ var s = bacaSeen() || {}; return m.oleh && m.oleh !== S.m
 function siapkanSeen(){ if (bacaSeen() === null) tandaiSeen((S.momen || []).map(function(m){ return m.id; })); }
 
 /* ---------- anggaran ---------- */
-function viewAnggaran(){
-  var a = S.akun, f = S.angPer;
-  var list = anggaranAkun(a).filter(function(x){ return f === 'semua' || x.periode === f; });
-  var html = pageHead('Anggaran') + '<div class="wrap"><div class="pills">' + [['semua','Semua']].concat(PERIODE).map(function(p){
-    return '<button class="' + (f === p[0] ? 'on' : '') + '" data-act="ang-per" data-v="' + p[0] + '">' + p[1] + '</button>';
-  }).join('') + '</div>';
-  if (A[a].bersama && !kantongAkun(a, 'keluar').length) return html + '<div class="card"><div class="empty">Akun ini belum punya kategori pengeluaran.</div></div></div>';
-  html += '<div class="card">' + (list.length ? list.map(angRow).join('') :
-    '<div class="empty">🎯<br>Belum ada anggaran' + (f !== 'semua' ? ' ' + labelPer(f).toLowerCase() : '') + '.<br>Atur batas pengeluaran per kategori.</div>') + '</div>';
-  html += '<button class="btn" data-act="edit-ang" data-id="">+ Tambah anggaran</button>';
-  html += '<div class="hint" style="text-align:center;margin-top:12px">Harian dihitung per hari, mingguan Senin–Minggu, bulanan per bulan kalender.</div>';
+/* ---------- anggaran per kategori (bertingkat, bulanan) ---------- */
+function batasSubTotal(k){ return (k.sub || []).reduce(function(x, s){ return x + (Number(s.batas) || 0); }, 0); }
+function batasKantong(k){ var t = batasSubTotal(k); return t || Number(k.batasK) || 0; }
+function bulanDari(tgl){ return ym(tgl || today()); }
+function pakaiKantong(k, m){ return jumlahBy(S.tx, function(t){ return t.kantong === k.id && t.jenis === 'Pengeluaran' && ym(t.tanggal) === m; }); }
+function pakaiSub(s, m){ return jumlahBy(S.tx, function(t){ return t.sub === s.id && t.jenis === 'Pengeluaran' && ym(t.tanggal) === m; }); }
+function kantongBeranggaran(a){ return kantongAkun(a, 'keluar').filter(function(k){ return batasKantong(k) > 0; }); }
+function angKatRow(k, m, buka){
+  var bt = batasKantong(k), pk = pakaiKantong(k, m), p = bt ? Math.round(pk / bt * 100) : 0, sisa = bt - pk;
+  var html = '<button class="akr" data-act="ang-buka" data-id="' + h(k.id) + '">' + ico(k, 38) + '<span class="mid"><span class="t"><b>' + h(k.nama) + '</b><small class="num">' + singkat(pk) + ' / ' + singkat(bt) + '</small></span>' +
+    '<span class="bar"><i class="' + barCls(p) + '" style="width:' + Math.min(100, p) + '%"></i></span>' +
+    '<span class="s"><span>' + p + '% · ' + (batasSubTotal(k) ? (k.sub || []).filter(function(s){ return Number(s.batas) > 0; }).length + ' sub dianggarkan' : 'batas kategori') + ' ' + (buka ? '▾' : '▸') + '</span><span class="' + (sisa < 0 ? 'out' : '') + '">' + (sisa >= 0 ? 'Sisa ' + singkat(sisa) : '⚠️ Lewat ' + singkat(-sisa)) + '</span></span></span></button>';
+  if (buka) {
+    var subs = (k.sub || []).map(function(s){ return {s:s, b:Number(s.batas) || 0, v:pakaiSub(s, m)}; }).filter(function(x){ return x.b || x.v; });
+    html += '<div class="aks">' + (subs.length ? subs.map(function(x){
+      var pp = x.b ? Math.round(x.v / x.b * 100) : 0;
+      return '<div class="aksr">' + subIco(x.s.id, 26) + '<span class="mid"><span class="t"><span>' + h(x.s.nama) + (x.b && x.v > x.b ? ' ⚠️' : '') + '</span><small class="num">' + singkat(x.v) + (x.b ? ' / ' + singkat(x.b) : ' · tanpa batas') + '</small></span>' +
+        (x.b ? '<span class="bar thin"><i class="' + barCls(pp) + '" style="width:' + Math.min(100, pp) + '%"></i></span>' : '') + '</span></div>';
+    }).join('') : '<div class="hint">Belum ada pengeluaran bulan ini.</div>') +
+      '<button class="lnk2" data-act="atur-ang-kat" data-id="' + h(k.id) + '" style="margin-top:6px">✏️ Atur batas ' + h(k.nama) + '</button></div>';
+  }
+  return html;
+}
+function kartuAnggaran(a){
+  var m = ym(today()), ks = kantongBeranggaran(a), S2 = S.angBuka || (S.angBuka = {});
+  ks.sort(function(x, y){ return pakaiKantong(y, m) / batasKantong(y) - pakaiKantong(x, m) / batasKantong(x); });
+  var html = '<div class="card"><div class="h2r"><h3>Anggaran bulan ini</h3><button class="lnk2" data-act="nav" data-v="anggaran">Semua ›</button></div>';
+  if (ks.length) {
+    var tb = ks.reduce(function(x, k){ return x + batasKantong(k); }, 0), tp = ks.reduce(function(x, k){ return x + pakaiKantong(k, m); }, 0);
+    html += '<div class="tot">Terpakai <b class="num">' + uang(tp) + '</b> dari <b class="num">' + uang(tb) + '</b> · ' + Math.round(tp / tb * 100) + '%</div>';
+    html += ks.map(function(k){ return angKatRow(k, m, S2[k.id]); }).join('');
+  }
+  var kh = anggaranAkun(a);
+  if (kh.length) html += '<div class="k2" style="margin:12px 0 4px">Anggaran khusus</div>' + kh.slice(0, 3).map(angRow).join('');
+  if (!ks.length && !kh.length) html += '<div class="empty">Belum ada anggaran.<br><button class="lnk2" data-act="nav" data-v="anggaran">+ Atur anggaran per kategori</button></div>';
   return html + '</div>';
+}
+function viewAnggaran(){
+  var a = S.akun, tab = S.angTab || 'kategori', m = ym(today());
+  var html = pageHead('Anggaran') + '<div class="wrap"><div class="seg" style="margin-bottom:14px">' +
+    [['kategori','Per kategori'],['khusus','Khusus']].map(function(x){ return '<button class="' + (tab === x[0] ? 'on' : '') + '" data-act="ang-tab" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
+  if (!kantongAkun(a, 'keluar').length) return html + '<div class="card"><div class="empty">Akun ini belum punya kategori pengeluaran.</div></div></div>';
+  if (tab === 'kategori') {
+    var ks = kantongAkun(a, 'keluar'), ada = ks.filter(function(k){ return batasKantong(k) > 0; }), belum = ks.filter(function(k){ return !batasKantong(k); });
+    var tb = ada.reduce(function(x, k){ return x + batasKantong(k); }, 0), tp = ada.reduce(function(x, k){ return x + pakaiKantong(k, m); }, 0);
+    html += '<div class="hint" style="margin:-4px 2px 12px">Batas per bulan untuk tiap kategori. Atur per sub-kategori (misal Listrik, PDAM, Kuota) dan total kategorinya dihitung otomatis.</div>';
+    if (ada.length) html += '<div class="card"><div class="tot">' + namaBulan(m) + ' · terpakai <b class="num">' + rp(tp) + '</b> dari <b class="num">' + rp(tb) + '</b></div>' + ada.map(function(k){ return angKatRow(k, m, (S.angBuka || {})[k.id]); }).join('') + '</div>';
+    if (belum.length) html += '<div class="sec"><h3>Belum diatur</h3></div><div class="card">' + belum.map(function(k){
+      return '<button class="row" data-act="atur-ang-kat" data-id="' + h(k.id) + '">' + ico(k, 36) + '<div class="mid"><div class="t">' + h(k.nama) + '</div><div class="s">Bulan ini ' + rp(pakaiKantong(k, m)) + '</div></div><span class="lnk2">Atur ›</span></button>';
+    }).join('') + '</div>';
+    return html + '</div>';
+  }
+  var f = S.angPer, list = anggaranAkun(a).filter(function(x){ return f === 'semua' || x.periode === f; });
+  html += '<div class="pills">' + [['semua','Semua']].concat(PERIODE).map(function(p){ return '<button class="' + (f === p[0] ? 'on' : '') + '" data-act="ang-per" data-v="' + p[0] + '">' + p[1] + '</button>'; }).join('') + '</div>';
+  html += '<div class="hint" style="margin:-4px 2px 12px">Untuk jatah harian/mingguan atau gabungan beberapa kategori, misal "Jatah makan Rp30rb per hari".</div>';
+  html += '<div class="card">' + (list.length ? list.map(angRow).join('') : '<div class="empty">Belum ada anggaran khusus.</div>') + '</div>';
+  html += '<button class="btn" data-act="edit-ang" data-id="">+ Tambah anggaran khusus</button>';
+  return html + '</div>';
+}
+function bukaAturAngKat(kid){
+  var k = K[kid], m = ym(today());
+  var html = head('Anggaran ' + k.nama, 'Batas per bulan · ' + namaBulan(m));
+  html += '<div class="card" style="padding:6px 14px">' + (k.sub || []).map(function(s){
+    return '<div class="angin">' + subIco(s.id, 32) + '<span class="mid"><b>' + h(s.nama) + '</b><small class="num">bulan ini ' + rp(pakaiSub(s, m)) + '</small></span>' +
+      '<input class="inp num" inputmode="numeric" data-money data-angsub="' + h(s.id) + '" placeholder="—" value="' + (Number(s.batas) ? Number(s.batas).toLocaleString('id-ID') : '') + '"></div>';
+  }).join('') + '</div>';
+  html += '<div class="angtot"><span>Total ' + h(k.nama) + '</span><b class="num" id="ang-total">' + rp(batasSubTotal(k)) + '</b></div>';
+  html += '<label class="label">Atau batas total kategori saja (dipakai bila semua sub dikosongkan)</label><input class="inp num" id="ang-katbatas" inputmode="numeric" data-money placeholder="cth: 500.000" value="' + (Number(k.batasK) ? Number(k.batasK).toLocaleString('id-ID') : '') + '">';
+  html += '<button class="btn" data-act="ang-kat-simpan" data-id="' + h(k.id) + '">Simpan anggaran</button>';
+  if (batasKantong(k)) html += '<button class="btn danger" data-act="ang-kat-hapus" data-id="' + h(k.id) + '">Hapus semua batas ' + h(k.nama) + '</button>';
+  bukaSheet(html);
+}
+function hitungTotalAng(){
+  var t = 0; [].forEach.call(document.querySelectorAll('[data-angsub]'), function(i){ t += digits(i.value); });
+  if ($('ang-total')) $('ang-total').textContent = rp(t);
+}
+function infoKategori(t){
+  if (t.jenis !== 'Pengeluaran' || !SB[t.sub]) return '';
+  var s = SB[t.sub].s, k = SB[t.sub].k, m = ym(t.tanggal), out = [];
+  if (Number(s.batas)) { var ps = pakaiSub(s, m), sb = Number(s.batas); out.push((ps > sb ? '⚠️ ' : '') + h(s.nama) + ' bulan ini ' + rp(ps) + ' dari ' + rp(sb) + (ps <= sb ? ', sisa <b>' + rp(sb - ps) + '</b>' : ', lewat <b>' + rp(ps - sb) + '</b>')); }
+  var bk = batasKantong(k);
+  if (bk) { var pk = pakaiKantong(k, m), p = Math.round(pk / bk * 100); out.push((p >= 100 ? '⚠️ ' : '') + h(k.nama) + ' total ' + p + '% (' + rp(pk) + ' / ' + rp(bk) + ')'); }
+  return out.join('<br>');
+}
+
+/* ---------- catat banyak sekaligus & tanggal ---------- */
+function bacaTanggal(raw){
+  var t = ' ' + String(raw).toLowerCase() + ' ', t0 = today(), m;
+  if (/\s(kemarin lusa|kemaren lusa)\s/.test(t)) return {tgl:geserTgl(t0, -2), re:/kemar[ie]n lusa/i};
+  if ((m = /\s(\d{1,2})\s*hari\s*(yang\s*)?lalu\s/.exec(t))) return {tgl:geserTgl(t0, -Math.min(60, +m[1])), re:/\d{1,2}\s*hari\s*(yang\s*)?lalu/i};
+  if (/\s(kemarin|kemaren|kmrn|kmarin)\s/.test(t)) return {tgl:geserTgl(t0, -1), re:/kemarin|kemaren|kmrn|kmarin/i};
+  if ((m = /\s(?:tgl|tanggal)\.?\s*(\d{1,2})(?:[\/\-](\d{1,2}))?\s/.exec(t))) {
+    var d = +m[1], bln = m[2] ? +m[2] : +t0.slice(5, 7), th = +t0.slice(0, 4);
+    if (d >= 1 && d <= 31) {
+      var s = th + '-' + pad(bln) + '-' + pad(Math.min(d, daysIn(th + '-' + pad(bln))));
+      if (s > t0) { var pm = shiftM(t0.slice(0, 7), -1); s = pm + '-' + pad(Math.min(d, daysIn(pm))); }
+      return {tgl:s, re:/(?:tgl|tanggal)\.?\s*\d{1,2}(?:[\/\-]\d{1,2})?/i};
+    }
+  }
+  if (/\s(hari ini|tadi|barusan)\s/.test(t)) return {tgl:t0, re:/hari ini/i};
+  return null;
+}
+function adaNominal(s){ var tg = bacaTanggal(s); return bacaNominal(tg ? s.replace(tg.re, ' ') : s); }
+function pecahPesan(text){
+  var keras = String(text).split(/\n|;|,(?!\d)/).map(function(x){ return x.trim(); }).filter(Boolean), out = [];
+  keras.forEach(function(p){
+    var lunak = p.split(/\s+(?:dan|terus|trus|lalu|kemudian|habis itu|abis itu|abis tu|plus)\s+/i).map(function(x){ return x.trim(); }).filter(Boolean);
+    if (lunak.length > 1 && lunak.every(adaNominal)) lunak.forEach(function(x){ out.push(x); });
+    else if (!adaNominal(p) && out.length && /^(pake|pakai|pakek|via|dari|ke|di|buat|untuk|utk|bayar pake)\b/i.test(p)) out[out.length - 1] += ' ' + p;
+    else out.push(p);
+  });
+  return out;
+}
+function prosesAntri(){
+  if (S.pending) return;
+  var q = S.antri;
+  if (!q || !q.list.length) {
+    if (q && q.total > 1) {
+      bot('🧾 Selesai: <b>' + q.ok + ' dari ' + q.total + '</b> tercatat' + (q.keluar ? ', total pengeluaran <b>' + rp(q.keluar) + '</b>' : '') + (q.masuk ? ', pemasukan <b>' + rp(q.masuk) + '</b>' : '') + '.');
+    }
+    S.antri = null; return;
+  }
+  var seg = q.list.shift();
+  S.pending = parse(seg.teks, S.akun);
+  if (seg.tgl) S.pending.tanggal = seg.tgl;
+  if (q.total > 1) S.pending.urut = (q.total - q.list.length) + '/' + q.total;
+  lanjut();
+}
+function mulaiAntri(text){
+  var global = bacaTanggal(text), segs = pecahPesan(text);
+  var list = segs.map(function(sg){ var tg = bacaTanggal(sg); return {teks: (tg ? sg.replace(tg.re, ' ') : (global ? sg.replace(global.re, ' ') : sg)).replace(/\s+/g, ' ').trim(), tgl: tg ? tg.tgl : (global ? global.tgl : '')}; }).filter(function(x){ return x.teks.replace(/[^a-z0-9]/gi, '').length > 1 && !/^(hari ini|tadi|barusan)$/i.test(x.teks); });
+  if (!list.length) { bot('Belum ada yang bisa kucatat. Coba tulis misalnya <b>beli bensin 20rb pake tunai</b>.'); return; }
+  S.antri = {list:list, total:list.length, ok:0, keluar:0, masuk:0};
+  if (list.length > 1) bot('Aku menemukan <b>' + list.length + ' catatan</b>, kuproses satu per satu ya.' + (global && global.tgl !== today() ? ' Tanggal: <b>' + tglPanjang(global.tgl) + '</b>.' : ''));
+  prosesAntri();
+}
+function migrasiSub(){
+  if (!S.cfg || S.cfg.mig1) return false;
+  S.cfg.kantong.forEach(function(k){
+    if (k.nama !== 'Rumah Tangga' || k.tipe !== 'keluar') return;
+    if ((k.sub || []).some(function(s){ return /hewan/i.test(s.nama); })) return;
+    k.sub.push({id:uid('s'), nama:'Hewan Peliharaan', icon:'paw', kata:['kucing','wetfood','wet food','dryfood','dry food','pasir kucing','makanan kucing','whiskas','me-o','meo','royal canin','anjing','grooming','dokter hewan','vet','vaksin kucing']});
+  });
+  S.cfg.mig1 = true; indeks();
+  return true;
 }
 
 /* =========================================================
@@ -1619,7 +1773,7 @@ function viewAnggaran(){
    ========================================================= */
 function sapa(){
   var n = A[S.me] ? A[S.me].nama : '';
-  S.chat = [{from:'bot', html:'Halo ' + h(n) + '! Ketik saja catatanmu, nanti langsung tersimpan.<br><br>Contoh:<br>• <b>beli bensin 20rb pake tunai</b><br>• <b>makan siang 25rb jago</b><br>• <b>belanja indomaret 45rb bri</b><br>• <b>gajian 5jt masuk bri</b><br>• <b>nabung 500rb ke rumah dari bri</b>'}];
+  S.chat = [{from:'bot', html:'Halo ' + h(n) + '! Ketik saja catatanmu, nanti langsung tersimpan.<br><br>Contoh:<br>• <b>beli bensin 20rb pake tunai</b><br>• <b>makan siang 25rb jago</b><br>• <b>belanja indomaret 45rb bri</b><br>• <b>gajian 5jt masuk bri</b><br>• <b>nabung 500rb ke rumah dari bri</b><br><br>Bisa sekaligus banyak, pisahkan dengan koma atau baris baru:<br>• <b>kemarin beli wetfood 45rb pake jago, bensin 20rb tunai</b><br>Tanggal bisa: <b>kemarin</b>, <b>2 hari lalu</b>, <b>tgl 10</b>.'}];
 }
 function renderChat(){
   var a = A[S.akun];
@@ -1635,12 +1789,13 @@ function kirimChat(text){
   text = String(text || '').trim(); if (!text) return;
   S.chat.push({from:'me', html:h(text)});
   var p = S.pending;
-  if (p && p.need === 'jumlah' && bacaNominal(text)) { p.jumlah = bacaNominal(text); lanjut(); return; }
-  S.pending = parse(text, S.akun);
-  lanjut();
+  if (p && p.need === 'jumlah' && bacaNominal(text) && pecahPesan(text).length < 2 && text.length < 20) { p.jumlah = bacaNominal(text); lanjut(); return; }
+  S.pending = null;
+  mulaiAntri(text);
 }
 function lanjut(){
   var p = S.pending; if (!p) return;
+  if (p.urut && !p.diumumkan) { p.diumumkan = true; if (!p.jumlah || (p.jenis !== 'Transfer' && !p.sub) || !p.dompet) bot('<span class="hint">(' + p.urut + ')</span> <b>' + h(p.text) + '</b>'); }
   if (!p.jumlah) { p.need = 'jumlah'; bot('Berapa nominalnya? Ketik saja, misalnya <b>25rb</b>.' + '<div class="chips"><button class="chip plain" data-act="p-batal">Batal</button></div>'); return; }
   if (p.jenis !== 'Transfer' && !p.sub) { p.need = 'kantong'; bot(tanyaKantong(p)); return; }
   if (!p.dompet) { p.need = 'dompet'; bot(tanyaDompet(p, 'dompet')); return; }
@@ -1689,21 +1844,24 @@ function infoBudget(t){
     var pakai = pakaiAng(x, t.tanggal), sisa = (Number(x.batas) || 0) - pakai;
     out.push(sisa >= 0 ? h(x.nama) + ' (' + labelPer(x.periode, 2).toLowerCase() + '): sisa <b>' + rp(sisa) + '</b>' : '⚠️ ' + h(x.nama) + ' (' + labelPer(x.periode, 2).toLowerCase() + ') lewat <b>' + rp(-sisa) + '</b>');
   });
+  var ik = infoKategori(t); if (ik) out.unshift(ik);
   return out.length ? '<div class="note">' + out.join('<br>') + '</div>' : '';
 }
 function simpanDariChat(p){
   S.pending = null;
-  var t = {akun:p.akun, tanggal:today(), jenis:p.jenis, jumlah:p.jumlah, kantong:p.kantong, sub:p.sub, dompet:p.dompet,
+  var t = {akun:p.akun, tanggal:p.tanggal || today(), jenis:p.jenis, jumlah:p.jumlah, kantong:p.kantong, sub:p.sub, dompet:p.dompet,
            tujuan:p.tujuan || '', target:p.target || '', toko:p.toko || '', catatan:p.text, oleh:S.me};
   if (p.jenis === 'Transfer') { t.kantong = ''; t.sub = ''; t.toko = ''; if (D[t.dompet]) t.akun = D[t.dompet].akun; }
   S.chat.push({from:'bot', html:'<span class="typing">Menyimpan…</span>'}); if (S.view === 'chat') renderChat();
   var idx = S.chat.length - 1;
   simpanTx(t).then(function(){
     var ingat = belajar(p);
-    S.chat[idx] = {from:'bot', html:'✓ Tercatat<div class="rec">' + txIco(t, 40) + '<div><b>' + h(txJudul(t)) + '</b> · <span class="' + (t.jenis === 'Pemasukan' ? 'in' : t.jenis === 'Pengeluaran' ? 'out' : '') + '">' + rp(t.jumlah) + '</span><br><span class="hint">' + h(txSub(t)) + '</span></div></div>' +
+    var q = S.antri; if (q) { q.ok++; if (t.jenis === 'Pengeluaran') q.keluar += t.jumlah; else if (t.jenis === 'Pemasukan') q.masuk += t.jumlah; }
+    S.chat[idx] = {from:'bot', html:'✓ Tercatat' + (p.urut ? ' <span class="hint">(' + p.urut + ')</span>' : '') + (t.tanggal !== today() ? ' · <b>' + h(tglPanjang(t.tanggal)) + '</b>' : '') + '<div class="rec">' + txIco(t, 40) + '<div><b>' + h(txJudul(t)) + '</b> · <span class="' + (t.jenis === 'Pemasukan' ? 'in' : t.jenis === 'Pengeluaran' ? 'out' : '') + '">' + rp(t.jumlah) + '</span><br><span class="hint">' + h(txSub(t)) + '</span></div></div>' +
       infoBudget(t) + ingat + '<button class="undo" data-act="undo" data-id="' + h(t.id) + '">Batalkan</button>'};
     if (S.view === 'chat') renderChat();
-  }).catch(function(e){ S.chat[idx] = {from:'bot', html:'Gagal menyimpan: ' + h(msg(e))}; if (S.view === 'chat') renderChat(); });
+    prosesAntri();
+  }).catch(function(e){ S.chat[idx] = {from:'bot', html:'Gagal menyimpan: ' + h(msg(e))}; if (S.view === 'chat') renderChat(); prosesAntri(); });
 }
 function simpanTx(t){
   t.ringkasan = txRingkasan(t);
@@ -1998,6 +2156,7 @@ function kelolaKantong(kid){
     '<div class="card">' + (k.sub || []).map(function(s){
       return '<button class="row" data-act="edit-sub" data-k="' + h(k.id) + '" data-id="' + h(s.id) + '">' + subIco(s.id, 36) + '<div class="mid"><div class="t">' + h(s.nama) + '</div><div class="s">' + h((s.kata || []).join(', ') || 'belum ada kata kunci') + '</div></div><span class="go">›</span></button>';
     }).join('') + '<button class="row" data-act="edit-sub" data-k="' + h(k.id) + '" data-id=""><span class="mid" style="color:var(--acc);font-weight:700">+ Tambah sub-kategori</span></button></div>' +
+    (k.tipe === 'keluar' ? '<button class="btn" data-act="atur-ang-kat" data-id="' + h(k.id) + '">🎯 Atur anggaran bulanan' + (batasKantong(k) ? ' · ' + rp(batasKantong(k)) : '') + '</button>' : '') +
     '<button class="btn ghost" data-act="edit-kantong" data-id="' + h(k.id) + '">Ubah kategori ini</button>');
 }
 function editKantong(id){
@@ -2400,6 +2559,15 @@ document.addEventListener('click', function(e){
     case 'bulan': S.month = shiftM(S.month, +v); render(); break;
     case 'filter': S.filter = v; render(); break;
     case 'ang-per': S.angPer = v; render(); break;
+    case 'ang-tab': S.angTab = v; render(); break;
+    case 'ang-buka': S.angBuka = S.angBuka || {}; S.angBuka[id] = !S.angBuka[id]; render(); break;
+    case 'atur-ang-kat': bukaAturAngKat(id); break;
+    case 'ang-kat-simpan': (function(){
+      var k = K[id]; (k.sub || []).forEach(function(sb){ var i = document.querySelector('[data-angsub="' + sb.id + '"]'); if (i) { var n = digits(i.value); if (n) sb.batas = n; else delete sb.batas; } });
+      var kb = digits(($('ang-katbatas') || {}).value || ''); if (kb) k.batasK = kb; else delete k.batasK;
+      simpanCfg(); tutup(); render(); toast(batasKantong(k) ? 'Anggaran ' + k.nama + ' ' + rp(batasKantong(k)) + '/bulan' : 'Anggaran ' + k.nama + ' dikosongkan');
+    })(); break;
+    case 'ang-kat-hapus': (function(){ var k = K[id]; (k.sub || []).forEach(function(sb){ delete sb.batas; }); delete k.batasK; simpanCfg(); tutup(); render(); toast('Batas ' + k.nama + ' dihapus'); })(); break;
     case 'eye': S.hide = !S.hide; store('kk_hide', S.hide ? '1' : null); render(); break;
     case 'tutup': tutup(); break;
     case 'detail': bukaDetail(id); break;
@@ -2478,7 +2646,8 @@ document.addEventListener('click', function(e){
       call('hapusTx', id).then(function(){ S.tx = S.tx.filter(function(t){ return t.id !== id; }); bot('Oke, catatan tadi sudah dibatalkan.'); })
         .catch(function(e){ el.disabled = false; el.textContent = 'Batalkan'; toast(msg(e)); });
       break;
-    case 'p-batal': S.pending = null; bot('Oke, dibatalkan.'); break;
+    case 'p-batal': S.pending = null; bot('Oke, dibatalkan.'); prosesAntri(); break;
+    case 'p-batal-semua': S.pending = null; S.antri = null; bot('Oke, semua dibatalkan.'); break;
     case 'p-jenis': if (!p) break; p.jenis = p.jenis === 'Pemasukan' ? 'Pengeluaran' : 'Pemasukan'; lanjut(); break;
     case 'p-kantong': if (!p) break; bot(tanyaSub(id)); break;
     case 'p-back': if (!p) break; bot(tanyaKantong(p)); break;
@@ -2532,7 +2701,7 @@ document.addEventListener('input', function(e){
     updPreview(); return;
   }
   if (S.form && S.form.preview && (t.id === 'f_nama' || t.id === 'f_inisial')) updPreview();
-  if (t.hasAttribute && t.hasAttribute('data-money')) { var n = digits(t.value); t.value = n ? n.toLocaleString('id-ID') : ''; }
+  if (t.hasAttribute && t.hasAttribute('data-money')) { var n = digits(t.value); t.value = n ? n.toLocaleString('id-ID') : ''; if (t.hasAttribute('data-angsub')) hitungTotalAng(); }
 });
 document.addEventListener('change', function(e){
   var t = e.target; if (!t.getAttribute) return;
