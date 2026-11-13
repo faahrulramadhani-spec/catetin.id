@@ -493,6 +493,13 @@ nav>button{position:relative}
 .kg small{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
 .kg.add{background:transparent;box-shadow:none;border:2px dashed #DDD5C8;justify-content:center}
 [data-rapat=ringkas] .kgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.drow{display:flex;gap:8px;overflow-x:auto;margin:12px -18px 0;padding:0 18px 2px;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.drow::-webkit-scrollbar{display:none}
+.drow button{flex:none;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.16);border-radius:14px;padding:7px 12px 7px 7px;color:#fff;text-align:left;max-width:170px}
+.drow button span{min-width:0}
+.drow small{display:block;font-size:11px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow b{font-size:13.5px;white-space:nowrap}
+.drow .more{border:1.5px dashed rgba(255,255,255,.6);background:transparent;font-weight:800;font-size:13px;padding:0 16px;min-height:44px}
 </style>
 </head>
 <body>
@@ -1365,9 +1372,9 @@ function heroHome(a, total, tab, masuk, keluar){
     '<div><span class="ar" style="background:#8C2F45;color:#fff">↑</span><span><small>Pengeluaran</small><b class="num">' + uang(keluar) + '</b></span></div></div></div>';
   // halaman 2: total saldo + dompet
   var p2 = '<div class="pg"><div class="h-l2"><span>Total saldo · ' + ds.length + ' dompet</span></div><div class="h-v num">' + uang(total) + eyeBtn() + '</div>' +
-    '<div class="h-sub">' + (tab > 0 ? 'termasuk tabungan ' + uang(tab) : 'semua dompet ' + h(A[a].nama)) + (utang < 0 ? ' · tagihan kredit ' + uang(-utang) : '') + '</div><div class="dgrid">' +
-    ds.slice(0, 3).map(function(d){ var v = sal[d.id] || 0; return '<button data-act="dompet-detail" data-id="' + h(d.id) + '">' + ico(d, 30) + '<span><small>' + h(d.nama) + '</small><b class="num">' + (S.hide ? 'Rp••••' : singkat(v)) + '</b></span></button>'; }).join('') +
-    (ds.length > 3 ? '<button class="more" data-act="semua-dompet">Lihat semua (' + ds.length + ') ›</button>' : '<button class="more" data-act="katalog">+ Tambah Dompet</button>') + '</div></div>';
+    '<div class="h-sub">' + (tab > 0 ? 'termasuk tabungan ' + uang(tab) : 'semua dompet ' + h(A[a].nama)) + (utang < 0 ? ' · tagihan kredit ' + uang(-utang) : '') + '</div><div class="drow">' +
+    ds.map(function(d){ var v = sal[d.id] || 0; return '<button data-act="dompet-detail" data-id="' + h(d.id) + '">' + ico(d, 30) + '<span><small>' + h(d.nama) + '</small><b class="num">' + (S.hide ? 'Rp••••' : singkat(v)) + '</b></span></button>'; }).join('') +
+    '<button class="more" data-act="katalog">+ Tambah Dompet</button></div></div>';
   html += '<div class="pager" id="pager">' + p1 + p2 + '</div><div class="dots"><i class="' + (pg === 0 ? 'on' : '') + '"></i><i class="' + (pg === 1 ? 'on' : '') + '"></i></div></div>';
   return html;
 }
