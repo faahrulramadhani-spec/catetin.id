@@ -1131,7 +1131,7 @@ function terimaAwal(d, dariCache){
   if (!S.akun || !A[S.akun]) S.akun = S.me;
   if (!S.month) S.month = ym(today());
   if (!S.chat.length) sapa();
-  $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+  $('login').classList.add('hidden'); $('app').classList.remove('hidden'); pasangBack();
   if (awal || !$('sheet').classList.contains('hidden') === false) render();
   if (!dariCache) simpanSnap();
 }
@@ -1158,6 +1158,22 @@ function chrome(){
   $('dial').classList.toggle('hidden', S.view === 'chat' || S.view === 'berdua' || S.view === 'timeline'); tutupDial();
   $('n-berdua').classList.toggle('dot', (S.momen || []).some(momenBaru));
   $('chatbar').classList.toggle('hidden', S.view !== 'chat');
+}
+/* tombol/gesture kembali (Android): tutup lembar → ke Beranda → baru keluar */
+function pasangBack(){
+  if (S.backOn) return; S.backOn = true;
+  try { history.pushState({catetin:1}, ''); } catch (e) {}
+  window.addEventListener('popstate', function(){
+    var keluar = false;
+    if ($('dial').classList.contains('open')) tutupDial();
+    else if (document.querySelector('.crop')) document.querySelector('.crop').remove();
+    else if (!$('sheet').classList.contains('hidden')) tutup();
+    else if (S.view !== 'home') { S.view = 'home'; render(); window.scrollTo(0, 0); }
+    else if (S.siapKeluar) keluar = true;
+    else { S.siapKeluar = true; toast('Geser/kembali sekali lagi untuk keluar'); setTimeout(function(){ S.siapKeluar = false; }, 2000); }
+    if (keluar) { history.back(); return; }
+    try { history.pushState({catetin:1}, ''); } catch (e) {}
+  });
 }
 function tutupDial(){ $('dial').classList.remove('open'); $('dial-bg').classList.add('hidden'); }
 function render(){
