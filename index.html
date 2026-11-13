@@ -1282,12 +1282,11 @@ function kartuStreak(a){
     var minggu = geserTgl(mon, 6), kurang = th > 1 ? th - setoranMinggu(a, mon) : 0;
     html += '<div class="tip">⚠️ ' + (setoranMinggu(a, mon) ? 'Setoran minggu ini kurang <b>' + rp(kurang) + '</b>.' : 'Minggu ini belum ada setoran.') + ' Nabung sebelum <b>Minggu, ' + tglPendek(minggu) + '</b> biar api tabungan tetap nyala.</div>';
   } else if (!set[t0] && nH) {
-    html += '<div class="tip">💡 Hari ini belum ada catatan. Catat atau tandai "tidak belanja" biar api tetap nyala.</div>';
+    html += '<div class="tip">💡 Hari ini belum ada catatan. Catat lewat tombol <b>+</b> atau tandai "tidak belanja" biar api tetap nyala.</div>';
   }
   var nolHariIni = set[t0] === 2;
-  html += '<div class="btns"><button class="b1" data-act="tambah">+ Catat</button>' +
-    (set[t0] === 1 ? '<button class="b2" data-act="nav" data-v="chat">💬 diCatetin</button>' :
-     '<button class="b2' + (nolHariIni ? ' on' : '') + '" data-act="tidak-belanja">' + (nolHariIni ? '✓ Hari ini tidak belanja' : 'Hari ini tidak belanja') + '</button>') + '</div></div>';
+  if (set[t0] !== 1) html += '<div class="btns"><button class="b2' + (nolHariIni ? ' on' : '') + '" data-act="tidak-belanja">' + (nolHariIni ? '✓ Hari ini tidak belanja' : 'Hari ini tidak belanja') + '</button></div>';
+  html += '</div>';
   return html;
 }
 
