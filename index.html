@@ -94,6 +94,12 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .bar i{display:block;height:100%;background:var(--teal);border-radius:999px}
 .bar i.mid{background:var(--mustard)}
 .bar i.over{background:var(--tomat)}
+.kotak{border:2px solid var(--acc-t)}
+.pill-n{display:inline-block;min-width:22px;padding:1px 7px;border-radius:999px;background:var(--acc);color:#fff;font-size:12px;text-align:center;vertical-align:middle;margin-left:4px}
+.kt{display:flex;gap:12px;padding:12px 0}.kt+.kt{border-top:1px solid var(--line)}
+.kt .mid{flex:1;min-width:0}.kt .t{display:flex;justify-content:space-between;gap:8px}.kt .t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kt .s{font-size:12.5px;color:var(--muted);margin-top:2px}.kt .warn{color:var(--tomat);font-weight:700}
+.kt .dr-b button{padding:7px 4px;font-size:13px}
 .dr-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:700}
 .dr-tag{margin-left:auto;font-size:11px;font-weight:700;color:#8a6a10;background:#FCEBCB;padding:3px 8px;border-radius:999px}
 .dr-b{display:flex;gap:8px;margin-top:10px}
@@ -1135,7 +1141,7 @@ function terimaAwal(d, dariCache){
   if (awal || !$('sheet').classList.contains('hidden') === false) render();
   if (!dariCache) simpanSnap();
 }
-function terima(d){ S.cfg = d.cfg; S.ver = d.ver; S.tx = d.tx || []; S.ikon = d.ikon || {}; S.url = d.url || ''; S.agenda = d.agenda || []; S.momen = d.momen || []; indeks(); }
+function terima(d){ S.cfg = d.cfg; S.ver = d.ver; S.tx = d.tx || []; S.ikon = d.ikon || {}; S.url = d.url || ''; S.agenda = d.agenda || []; S.momen = d.momen || []; S.kotak = (d.kotak || []).filter(function(k){ return !(S.kotakSudah || {})[k.id]; }); indeks(); }
 function muatUlang(diam){
   if (!S.token) return Promise.resolve();
   return call('ambilSemua').then(function(d){
@@ -1483,13 +1489,61 @@ function bukaSemuaDompet(){
       return '<button class="row" data-act="dompet-detail" data-id="' + h(d.id) + '">' + ico(d, 40) + '<div class="mid"><div class="t">' + h(d.nama) + '</div><div class="s">' + h(namaJenis(d.jenis)) + '</div></div><span class="v num ' + ((sal[d.id] || 0) < 0 ? 'out' : '') + '">' + rp(sal[d.id] || 0) + '</span></button>';
     }).join('') + '</div><button class="btn" data-act="katalog">+ Tambah Dompet</button>');
 }
+/* ---------- kotak email bank ---------- */
+function kunciPenerima(p){ return norm(String(p || '').replace(/\b(qris|livin|mandiri|jago|pt|cv|tbk)\b/gi, ' ')).replace(/\s+/g, ' ').trim(); }
+function dompetBank(akun, bank){
+  var re = bank === 'jago' ? /jago/i : bank === 'mandiri' ? /mandiri|livin/i : null; if (!re) return '';
+  var d = dompetAkun(akun).filter(function(x){ return re.test(x.nama); })[0]; return d ? d.id : '';
+}
+function tebakKotak(k){
+  var akun = S.me, t = {akun:akun, tanggal:k.tanggal, jenis:k.jenis, jumlah:k.jumlah, kantong:'', sub:'', dompet:dompetBank(akun, k.bank), tujuan:'', target:'', toko:'', catatan:(k.penerima || 'Transaksi ' + k.bank) + ' (email bank)', oleh:S.me};
+  var key = kunciPenerima(k.penerima), ing = (S.cfg.penerima || {})[key];
+  if (ing && SB[ing]) { t.sub = ing; t.kantong = SB[ing].k.id; }
+  else if (key) { var p = parse(key + ' ' + k.jumlah, akun); if (p && p.sub && p.jenis === k.jenis) { t.sub = p.sub; t.kantong = p.kantong; if (p.toko) t.toko = p.toko; } }
+  return t;
+}
+function kartuKotak(a){
+  if (a !== S.me || !(S.kotak || []).length) return '';
+  var list = S.kotak.slice().sort(function(x, y){ return x.tanggal < y.tanggal ? 1 : -1; });
+  return '<div class="card kotak"><div class="h2r"><h3>📩 Email bank <span class="pill-n">' + list.length + '</span></h3>' + (list.length > 1 ? '<button class="lnk2" data-act="k-semua">Simpan yg lengkap</button>' : '') + '</div>' +
+    '<div class="hint" style="margin:-2px 0 6px">Transaksi dari email Jago & Livin\'. Cek dulu, lalu simpan.</div>' +
+    list.map(function(k){
+      var t = tebakKotak(k), lengkap = t.dompet && (t.jenis !== 'Pengeluaran' && t.jenis !== 'Pemasukan' || t.sub);
+      return '<div class="kt">' + (t.dompet ? ico(D[t.dompet], 40) : '<span class="ic" style="width:40px;height:40px;background:#999">' + h(k.bank.slice(0, 3).toUpperCase()) + '</span>') +
+        '<div class="mid"><div class="t"><b>' + h(k.penerima || (k.jenis === 'Pemasukan' ? 'Uang masuk' : 'Transaksi')) + '</b><span class="' + (k.jenis === 'Pemasukan' ? 'in' : 'out') + ' num">' + (k.jenis === 'Pemasukan' ? '+' : '−') + rp(k.jumlah) + '</span></div>' +
+        '<div class="s">' + h(tglPendek(k.tanggal)) + ' · ' + (t.dompet ? h(D[t.dompet].nama) : 'dompet belum dipilih') + ' · ' + (t.sub ? h(SB[t.sub].s.nama) : '<span class="warn">kategori?</span>') + '</div>' +
+        '<div class="dr-b"><button class="dr-x" data-act="k-hapus" data-id="' + h(k.id) + '">Hapus</button><button class="dr-e" data-act="k-ubah" data-id="' + h(k.id) + '">✏️ Ubah</button>' +
+        '<button class="dr-s" data-act="' + (lengkap ? 'k-simpan' : 'k-ubah') + '" data-id="' + h(k.id) + '">' + (lengkap ? 'Simpan' : 'Kategori ›') + '</button></div></div></div>';
+    }).join('') + '</div>';
+}
+function kotakBeres(id, status, t){
+  S.kotakSudah = S.kotakSudah || {}; S.kotakSudah[id] = 1;
+  var k = (S.kotak || []).filter(function(x){ return x.id === id; })[0];
+  S.kotak = (S.kotak || []).filter(function(x){ return x.id !== id; });
+  if (status === 'simpan' && k && t && t.sub) {
+    var key = kunciPenerima(k.penerima);
+    if (key && (S.cfg.penerima || {})[key] !== t.sub) { S.cfg.penerima = S.cfg.penerima || {}; S.cfg.penerima[key] = t.sub; simpanCfg(true); }
+  }
+  call('kotakSelesai', id, status).catch(function(){});
+  render();
+}
+function simpanKotak(id){
+  var k = (S.kotak || []).filter(function(x){ return x.id === id; })[0]; if (!k) return Promise.resolve();
+  var t = tebakKotak(k);
+  return simpanTx(t).then(function(){ kotakBeres(id, 'simpan', t); toast('Tersimpan ✓ ' + rp(t.jumlah)); }).catch(function(e){ toast(msg(e)); });
+}
+function ubahKotak(id){
+  var k = (S.kotak || []).filter(function(x){ return x.id === id; })[0]; if (!k) return;
+  var t = tebakKotak(k);
+  bukaTambah({akun:S.me, jenis:t.jenis, jumlah:t.jumlah, kantong:t.kantong, sub:t.sub, dompet:t.dompet, tanggal:t.tanggal, catatan:k.penerima || '', toko:t.toko, kotak:id});
+}
 function viewHome(){
   var a = S.akun, m = S.month, sal = saldoMap();
   var total = dompetAkun(a).reduce(function(x, d){ return x + (sal[d.id] || 0); }, 0);
   var bulan = S.tx.filter(function(t){ return t.akun === a && ym(t.tanggal) === m; });
   var masuk = jumlahBy(bulan, function(t){ return t.jenis === 'Pemasukan'; });
   var keluar = jumlahBy(bulan, function(t){ return t.jenis === 'Pengeluaran'; });
-  var html = heroHome(a, total, totalTabungan(a), masuk, keluar) + '<div class="wrap lift">';
+  var html = heroHome(a, total, totalTabungan(a), masuk, keluar) + '<div class="wrap lift">' + kartuKotak(a);
   urutanKartu().forEach(function(x){
     if (!x.on) return;
     var c = '';
@@ -2056,7 +2110,7 @@ function simpanTambah(){
   if (x.draft && S.draft && S.draft[x.draft]) { var dd = S.draft[x.draft]; dd.t = t; tutup(); simpanDraft(x.draft); return; }
   var b = $('a-btn'); b.disabled = true; b.textContent = 'Menyimpan…';
   simpanTx(t).then(function(){
-    tutup(); render();
+    tutup(); if (x.kotak) kotakBeres(x.kotak, 'simpan', t); render();
     var info = infoBudget(t).replace(/<br>/g, ' · ').replace(/<[^>]+>/g, '');
     toast('Tersimpan ✓' + (info ? ' · ' + info : ''));
   }).catch(function(e){ b.disabled = false; b.textContent = 'Simpan'; toast(msg(e)); });
@@ -2794,6 +2848,12 @@ document.addEventListener('click', function(e){
         .catch(function(e){ el.disabled = false; el.textContent = 'Batalkan'; toast(msg(e)); });
       break;
     case 'd-simpan': simpanDraft(id); break;
+    case 'k-simpan': el.disabled = true; simpanKotak(id); break;
+    case 'k-hapus': kotakBeres(id, 'hapus'); toast('Dihapus, tidak dicatat'); break;
+    case 'k-ubah': ubahKotak(id); break;
+    case 'k-semua': (function(){ var ids = (S.kotak || []).filter(function(k){ var t = tebakKotak(k); return t.dompet && t.sub; }).map(function(k){ return k.id; }), i = 0;
+      if (!ids.length) return toast('Belum ada yang lengkap. Pilih kategori dulu lewat Ubah.');
+      (function next(){ if (i >= ids.length) return; simpanKotak(ids[i++]).then(next); })(); })(); break;
     case 'd-hapus': hapusDraft(id); break;
     case 'd-ubah': ubahDraft(id); break;
     case 'd-semua': el.disabled = true; simpanSemuaDraft(); break;
