@@ -210,6 +210,10 @@ main{max-width:600px;margin:0 auto;padding-bottom:130px}
 .h-btn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18)}
 .h-btn svg{width:20px;height:20px}
 .hi{font-size:22px;font-weight:800;margin:14px 0 10px;position:relative}
+.sapa{position:relative;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.16);border-radius:14px;padding:9px 10px 9px 14px;margin:-4px 0 14px;font-size:14px;font-weight:600;line-height:1.35}
+.sapa span{flex:1}.sapa.ok{padding:9px 14px}
+.sapa.malam{background:rgba(20,16,40,.28)}
+.sapa button{flex:none;background:#fff;color:var(--acc);font-weight:800;font-size:13px;padding:7px 12px;border-radius:999px}
 .h-month{display:inline-flex;align-items:center;gap:4px;background:#fff;color:var(--ink);border-radius:999px;padding:4px;font-size:13px;font-weight:700;position:relative}
 .h-month button{width:26px;height:26px;border-radius:50%;font-weight:800}
 .h-month b{padding:0 6px}
@@ -1298,6 +1302,22 @@ function txRow(t){
     '<div class="mid"><div class="t1">' + h(txJudul(t)) + '</div><div class="t2">' + h(txSub(t) || t.catatan) + '</div></div>' +
     '<div class="amt ' + (masuk ? 'in' : keluar ? 'out' : '') + '">' + (masuk ? '+' : keluar ? '−' : '') + rp(t.jumlah) + '</div></button>';
 }
+function panggilan(id){ var a = A[id]; if (!a) return ''; return a.panggilan || (/fahrul/i.test(a.nama) ? 'Rull' : /asfa/i.test(a.nama) ? 'Faa' : a.nama); }
+function sapaanHarian(){
+  var me = S.me, set = hariCatat(me), t0 = today(), st = set[t0], n = streakHari(set), pg = panggilan(me);
+  var jam = new Date().getHours(), malam = jam >= 20, sore = jam >= 17;
+  var pick = function(xs){ return xs[(+t0.slice(8, 10) + jam) % xs.length]; };
+  if (st) {
+    var msg = n >= 7 ? pick([n + ' hari berturut-turut, mantap ' + pg + '! 🔥', 'Konsisten banget, ' + pg + '. ' + n + ' hari nggak bolong 👏'])
+      : pick(['Makasih udah nyatet hari ini, ' + pg + ' 🙌 Besok jangan lupa ya.', 'Catatan hari ini aman, ' + pg + ' ✨ Sampai besok!', 'Mantap ' + pg + ', hari ini udah tercatat ✅']);
+    return '<div class="sapa ok">' + h(msg) + '</div>';
+  }
+  var api = n ? ' biar api ' + n + ' harimu nggak padam 🔥' : '';
+  var msg2 = malam ? pick(['Udah malam nih, ' + pg + '. Yuk catat dulu sebelum lupa 🌙', pg + ', hari ini belum nyatet lho. Catat dulu yuk' + (api ? ',' + api : ' 🌙')])
+    : sore ? pick(['Sore, ' + pg + '! Ada pengeluaran hari ini? Catat yuk ✍️', 'Hari ini belum ada catatan, ' + pg + '. Masih sempat kok ✍️'])
+    : pick(['Hari ini belum nyatet nih, ' + pg + ' ✍️', (jam < 11 ? 'Pagi' : 'Siang') + ', ' + pg + '! Jangan lupa catat pengeluaran hari ini ya ✍️']);
+  return '<div class="sapa' + (malam ? ' malam' : '') + '"><span>' + h(msg2) + '</span><button data-act="dial-go" data-v="chat">Catat</button></div>';
+}
 function hero(label, total, mini){
   var nm = A[S.me] ? A[S.me].nama : '';
   return '<div class="hero"><span class="sun"></span><div class="h-top">' + switchBtn() +
@@ -1532,7 +1552,7 @@ function heroHome(a, total, tab, masuk, keluar){
   var utang = ds.filter(function(d){ return d.jenis === 'kredit'; }).reduce(function(x, d){ return x + Math.min(0, sal[d.id] || 0); }, 0);
   var html = '<div class="hero"><span class="sun"></span><div class="h-top">' + switchBtn() +
     '<button class="h-btn" data-act="reload" aria-label="Muat ulang">' + SVG.reload + '</button></div>' +
-    '<div class="hi">Hi, ' + h(nm) + ' 👋</div>' +
+    '<div class="hi">Hi, ' + h(nm) + ' 👋</div>' + (A[a] && !A[a].bersama && a === S.me ? sapaanHarian() : '') +
     '<div class="htabs"><button data-act="hero-pg" data-v="0" class="' + (pg === 0 ? 'on' : '') + '">' + namaBulan(S.month) + '</button><button data-act="hero-pg" data-v="1" class="' + (pg === 1 ? 'on' : '') + '">Total Saldo</button></div>';
   // halaman 1: bulan ini
   var p1 = '<div class="pg"><div class="h-l2"><span>Sisa keuangan ' + (S.month === ym(today()) ? 'bulan ini' : namaBulan(S.month)) + '</span>' +
@@ -2702,7 +2722,7 @@ function viewAtur(){
 
   html += '<div class="sec"><h3>Lainnya</h3></div><div class="card">' +
     '<button class="row" data-act="tampilan"><div class="mid"><div class="t">Tampilan</div><div class="s">Ukuran teks, tema gelap, kerapatan, isi beranda</div></div><span class="go">›</span></button>' +
-    '<button class="row" data-act="edit-akun"><div class="mid"><div class="t">Ubah nama & warna akun ' + h(ak.nama) + '</div></div><span class="go">›</span></button>' +
+    '<button class="row" data-act="edit-akun"><div class="mid"><div class="t">Ubah akun ' + h(ak.nama) + '</div><div class="s">' + (ak.bersama ? 'Nama & warna' : 'Nama, panggilan, pengingat email, warna') + '</div></div><span class="go">›</span></button>' +
     (S.url ? '<a class="row" style="color:inherit;text-decoration:none" href="' + h(S.url) + '" target="_blank" rel="noopener"><div class="mid"><div class="t">Buka Google Spreadsheet</div><div class="s">Lihat semua data dalam bentuk tabel</div></div><span class="go">↗</span></a>' : '') +
     '<button class="row" data-act="nav" data-v="laporan"><div class="mid"><div class="t">Laporan bulanan</div><div class="s">Pengeluaran per kategori & sub-kategori</div></div><span class="go">›</span></button>' +
     '<button class="row" data-act="nav" data-v="berdua"><div class="mid"><div class="t">Berdua</div><div class="s">Agenda, Love Timeline, foto sampul</div></div><span class="go">›</span></button>' +
@@ -2784,8 +2804,13 @@ function wajib(d, k, label){ if (!d[k]) { toast(label + ' wajib diisi'); return 
 
 function editAkun(){
   var ak = A[S.akun];
-  bukaForm({title:'Ubah akun', data:ak, fields:[{k:'nama', label:'Nama', max:20}, {k:'warna', label:'Warna', type:'color'}],
-    onSave:function(d){ if (!wajib(d, 'nama', 'Nama')) return; ak.nama = d.nama; ak.warna = d.warna; tutup(); simpanCfg(); render(); }});
+  var pribadi = !ak.bersama;
+  bukaForm({title:'Ubah akun', data:Object.assign({}, ak, {panggilan:pribadi ? panggilan(ak.id) : '', ingat:ak.ingat === false ? '0' : '1'}),
+    fields:[{k:'nama', label:'Nama', max:20}].concat(pribadi ? [{k:'panggilan', label:'Panggilan akrab di sapaan', ph:'cth: Rull', max:12},
+      {k:'ingat', label:'Email pengingat jam 20.00 kalau belum nyatet', type:'select', opts:[['1', 'Aktif'], ['0', 'Matikan']], hint:'Dikirim ke ' + (ak.email || 'email akun ini') + '.'}] : []).concat([{k:'warna', label:'Warna', type:'color'}]),
+    onSave:function(d){ if (!wajib(d, 'nama', 'Nama')) return; ak.nama = d.nama; ak.warna = d.warna;
+      if (pribadi) { ak.panggilan = String(d.panggilan || '').trim(); ak.ingat = d.ingat !== '0'; }
+      tutup(); simpanCfg(); render(); }});
 }
 function editDompet(id, inst){
   var d0 = id ? D[id] : null, kat = inst ? KAT[inst] : null;
