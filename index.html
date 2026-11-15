@@ -153,7 +153,7 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .tl-who{position:absolute;right:-5px;bottom:-5px;width:20px;height:20px;border-radius:50%;color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;border:2px solid var(--card)}
 .tl-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.tl-m b{font-size:15px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tl-tags{display:flex;flex-wrap:wrap;gap:4px}
-.tl-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tl-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;color:color-mix(in srgb,var(--c) 72%,#000);background:color-mix(in srgb,var(--c) 14%,transparent)}
 .tl-cat{font-size:12px;color:var(--muted);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tl-r{text-align:right;flex:none;max-width:42%;display:flex;flex-direction:column;gap:3px}.tl-r b{font-size:15px;font-weight:800}
 .tl-r small{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -186,6 +186,7 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .kal-c{position:relative;aspect-ratio:1/1.05;border-radius:11px;display:flex;flex-direction:column;justify-content:space-between;padding:4px 5px;text-align:left;background:var(--soft);min-width:0;overflow:hidden}
 .kal-c .kd{font-size:11.5px;font-weight:700;opacity:.85}
 .kal-c b{font-size:11px;font-weight:800;text-align:right;white-space:nowrap;letter-spacing:-.02em}
+.kal-c.l1,.kal-c.l2{color:#2B2433}.kal-c.l3{color:#2B2433}
 .kal-c.l1{background:color-mix(in srgb,var(--acc) 14%,#fff)}.kal-c.l2{background:color-mix(in srgb,var(--acc) 30%,#fff)}
 .kal-c.l3{background:color-mix(in srgb,var(--acc) 52%,#fff)}.kal-c.l4{background:color-mix(in srgb,var(--acc) 75%,#fff);color:#fff}
 .kal-c.l5{background:color-mix(in srgb,var(--acc) 92%,#000);color:#fff}
@@ -223,7 +224,7 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .angtot{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;margin:10px 0 4px;border-radius:14px;background:var(--soft);font-weight:700}
 .in{color:var(--teal)} .out{color:var(--maroon)}
 .empty{color:var(--muted);text-align:center;padding:22px 8px;font-size:14px}
-.toast{position:fixed;left:50%;bottom:112px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 16px;border-radius:14px;font-size:14px;z-index:40;max-width:90%;text-align:center;box-shadow:var(--sh)}
+.toast{position:fixed;left:50%;bottom:112px;transform:translateX(-50%);background:#2B2433;color:#fff;padding:11px 16px;border-radius:14px;font-size:14px;z-index:40;max-width:90%;text-align:center;box-shadow:var(--sh)}
 main{max-width:600px;margin:0 auto;padding-bottom:130px}
 .wrap{padding:0 16px}
 
@@ -633,9 +634,33 @@ nav>button.on svg{stroke:#fff;background:var(--acc);box-shadow:0 4px 10px color-
 [data-tema=gelap] .pills button{background:var(--card)}
 [data-tema=gelap] .search,[data-tema=gelap] .inp{background:var(--card)}
 [data-tema=gelap] .sw2{background:#4A424F}
+/* ---- kontras tema gelap ---- */
+[data-tema=gelap] .in,[data-tema=gelap] b.in,[data-tema=gelap] span.in{color:#5CC7B5}[data-tema=gelap] .out,[data-tema=gelap] b.out,[data-tema=gelap] span.out{color:#FF9A86}[data-tema=gelap] .kt .warn,[data-tema=gelap] .ag-s.out,[data-tema=gelap] .akr .s .out{color:#FF9A86}
+[data-tema=gelap] .lnk2,[data-tema=gelap] .sec>button,[data-tema=gelap] .sec button{color:color-mix(in srgb,var(--acc) 45%,#fff)}
+[data-tema=gelap] .bd-t,[data-tema=gelap] .status b,[data-tema=gelap] .lnk{color:#F4A6B4}
+[data-tema=gelap] .feat .go{background:rgba(255,255,255,.18);color:#fff}
+[data-tema=gelap] .pola .pd{color:#5E554C}[data-tema=gelap] .cv-kosong,[data-tema=gelap] .cv-kosong small{color:#CFC6BA}
+[data-tema=gelap] .hint b{color:var(--ink)}
+.akc{color:var(--c)}[data-tema=gelap] .akc{color:color-mix(in srgb,var(--c) 45%,#fff)}
+[data-tema=gelap] .d7 i.now2{border-color:#9DB3E0;color:#9DB3E0}
+[data-tema=gelap] .t.out{color:#FF8A70}
+[data-tema=gelap] .tl-tag{color:color-mix(in srgb,var(--c) 55%,#fff);background:color-mix(in srgb,var(--c) 28%,transparent)}
+[data-tema=gelap] .kal-c.l1,[data-tema=gelap] .kal-c.l2{color:var(--ink)}
+[data-tema=gelap] .kal-c.l1{background:color-mix(in srgb,var(--acc) 22%,var(--card))}
+[data-tema=gelap] .kal-c.l2{background:color-mix(in srgb,var(--acc) 40%,var(--card))}
+[data-tema=gelap] .kal-c.l3{background:color-mix(in srgb,var(--acc) 60%,var(--card));color:#fff}
+[data-tema=gelap] .kal-c.l4{background:color-mix(in srgb,var(--acc) 80%,var(--card));color:#fff}
+[data-tema=gelap] .kal-c.l5{background:var(--acc);color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+[data-tema=gelap] .kal-leg .l1{background:color-mix(in srgb,var(--acc) 22%,var(--card))}[data-tema=gelap] .kal-leg .l2{background:color-mix(in srgb,var(--acc) 40%,var(--card))}[data-tema=gelap] .kal-leg .l3{background:color-mix(in srgb,var(--acc) 60%,var(--card))}[data-tema=gelap] .kal-leg .l4{background:color-mix(in srgb,var(--acc) 80%,var(--card))}[data-tema=gelap] .kal-leg .l5{background:var(--acc)}
+[data-tema=gelap] .kal-c.today,[data-tema=gelap] .kal-c.sel{box-shadow:inset 0 0 0 2.5px #fff}
+[data-tema=gelap] .kal-warn{background:#4A2A2E;color:#FFC9C2}
+[data-tema=gelap] .ag-ring{background:conic-gradient(var(--w) calc(var(--p)*1%),color-mix(in srgb,var(--c) 30%,var(--card)) 0)}
+[data-tema=gelap] .tags .tg-lewat{background:#4A2A2E;color:#FFB4A8}[data-tema=gelap] .tags .tg-b{background:#2A3546;color:#B9CCE6}
+[data-tema=gelap] .tgh{border-color:#5A4A2A}
+[data-tema=gelap] .dr-tag{background:#4A3E22;color:#F2D58A}
 .htabs{display:inline-flex;gap:4px;background:rgba(255,255,255,.16);border-radius:999px;padding:4px;position:relative}
 .htabs button{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;color:#fff;opacity:.85}
-.htabs button.on{background:#fff;color:var(--ink);opacity:1}
+.htabs button.on{background:#fff;color:#2B2433;opacity:1}
 .pager{display:flex;align-items:flex-start;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -18px;scrollbar-width:none;position:relative;-webkit-overflow-scrolling:touch}
 .pager::-webkit-scrollbar{display:none}
 .pg{flex:0 0 100%;scroll-snap-align:start;padding:0 18px;min-width:0}
@@ -2410,7 +2435,7 @@ function sapa(){
 }
 function renderChat(){
   var a = A[S.akun];
-  $('view').innerHTML = pageHead('diCatetin') + '<div class="wrap"><div class="hint" style="text-align:center;margin-bottom:8px">Mencatat untuk <b style="color:' + h(a.warna) + '">' + h(a.nama) + '</b></div><div id="chatlog">' +
+  $('view').innerHTML = pageHead('diCatetin') + '<div class="wrap"><div class="hint" style="text-align:center;margin-bottom:8px">Mencatat untuk <b class=\"akc\" style=\"--c:' + h(a.warna) + '\">' + h(a.nama) + '</b></div><div id="chatlog">' +
     S.chat.map(function(m){ return '<div class="msg ' + m.from + '">' + m.html + '</div>'; }).join('') + '</div><div style="height:90px"></div></div>';
   var ex = a.bersama ? ['nabung 500rb ke rumah dari bri','setor 1jt nikah dari jago','beli semen 300rb pake tabungan'] :
     ['makan siang 25rb jago','bensin 20rb tunai','grab 15rb gopay','indomaret 45rb bri','gajian 5jt bri','tarik tunai 100rb bri'];
