@@ -133,6 +133,30 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .cd{flex:none;width:132px;scroll-snap-align:start;background:var(--card);border-radius:20px;padding:14px 12px;box-shadow:var(--sh);display:flex;flex-direction:column;align-items:flex-start;text-align:left}
 .cd-i{font-size:22px}.cd b{font-size:26px;line-height:1.1;margin-top:6px}.cd small{color:var(--muted);font-size:12px}
 .cd-n{font-weight:700;font-size:13.5px;margin-top:8px;line-height:1.25}.cd-d{font-size:11.5px;color:var(--muted)}
+.tl-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 14px}
+.tl-sum>div{background:var(--card);border-radius:16px;padding:10px 12px;box-shadow:var(--sh)}
+.tl-sum small{display:block;font-size:11.5px;color:var(--muted);font-weight:600}.tl-sum b{font-size:16px}
+.tl2{position:relative;padding-left:44px;margin-top:4px}
+.tl2::before{content:"";position:absolute;left:19px;top:8px;bottom:8px;width:2px;background:repeating-linear-gradient(var(--line) 0 6px,transparent 6px 11px)}
+.tl-d{position:relative;margin-bottom:18px}
+.tl-node{position:absolute;left:-44px;top:-4px;width:40px;height:44px;border-radius:14px;background:var(--card);box-shadow:var(--sh);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;border:2px solid var(--line)}
+.tl-node b{font-size:17px;font-weight:800}.tl-node small{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;text-transform:uppercase}
+.tl-node.down{border-color:var(--tomat)}.tl-node.down b{color:var(--tomat)}
+.tl-node.up{border-color:var(--teal)}.tl-node.up b{color:var(--teal)}
+.tl-h{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:36px;margin:0 2px 6px;font-weight:800;font-size:15px}
+.tl-h i{font-style:normal;font-size:12px;font-weight:800;color:#fff;background:var(--acc);padding:3px 10px;border-radius:999px;vertical-align:1px}.tl-h small{font-size:12.5px;color:var(--muted);font-weight:600;margin-left:4px}
+.tl-net{font-size:13.5px;font-weight:800;white-space:nowrap}
+.tl-tx{position:relative;display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:var(--card);border-radius:18px;padding:12px 14px 12px 12px;margin-bottom:8px;box-shadow:var(--sh);overflow:hidden}
+.tl-tx::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:4px;border-radius:0 4px 4px 0;background:var(--c)}
+.tl-tx::after{content:"";position:absolute;left:-25px;top:50%;width:25px;height:2px;background:var(--line)}
+.tl-ic{position:relative;flex:none}
+.tl-who{position:absolute;right:-5px;bottom:-5px;width:20px;height:20px;border-radius:50%;color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;border:2px solid var(--card)}
+.tl-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.tl-m b{font-size:15px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-tags{display:flex;flex-wrap:wrap;gap:4px}
+.tl-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.tl-cat{font-size:12px;color:var(--muted);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-r{text-align:right;flex:none;max-width:42%;display:flex;flex-direction:column;gap:3px}.tl-r b{font-size:15px;font-weight:800}
+.tl-r small{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .perbar{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:var(--card);border-radius:18px;padding:12px 16px;margin:-4px 0 12px;box-shadow:var(--sh)}
 .perbar small{display:block;color:var(--muted);font-size:12px;font-weight:600}.perbar b{font-size:16px}.perbar .r{text-align:right;font-weight:700;font-size:14px}
 .bar.thin{height:5px;margin-top:5px}
@@ -1231,6 +1255,25 @@ function render(){
 function switchBtn(){ var a = A[S.akun]; return '<button class="switch" data-act="pilih-akun"><i style="background:' + h(a.warna) + '"></i>' + h(a.nama) + ' ▾</button>'; }
 function pageHead(judul){ return '<div class="ph"><h2>' + h(judul) + '</h2>' + switchBtn() + '</div>'; }
 function monthNav(){ return '<div class="month"><button data-act="bulan" data-v="-1" aria-label="Bulan sebelumnya">‹</button><b>' + namaBulan(S.month) + '</b><button data-act="bulan" data-v="1" aria-label="Bulan berikutnya">›</button></div>'; }
+function arahTx(t, a){
+  var masuk = t.jenis === 'Pemasukan' || (t.jenis === 'Transfer' && D[t.tujuan] && D[t.tujuan].akun === a && !(D[t.dompet] && D[t.dompet].akun === a));
+  var keluar = t.jenis === 'Pengeluaran' || (t.jenis === 'Transfer' && D[t.dompet] && D[t.dompet].akun === a && !(D[t.tujuan] && D[t.tujuan].akun === a));
+  return masuk ? 1 : keluar ? -1 : 0;
+}
+function txKartu(t){
+  var a = S.akun, ar = arahTx(t, a), x = SB[t.sub], warna = t.jenis === 'Transfer' ? '#5C8FB0' : x ? (x.s.warna || x.k.warna) : '#999';
+  var tags = '';
+  if (t.jenis === 'Transfer') tags += '<span class="tl-tag" style="--c:#5C8FB0">' + (T[t.target] ? '🐷 ' + h(T[t.target].nama) : '⇄ Transfer') + '</span>';
+  else if (x) tags += '<span class="tl-tag" style="--c:' + h(warna) + '">' + h(x.k.nama) + '</span>';
+  if (TK[t.toko]) tags += '<span class="tl-tag" style="--c:#8A7F72">' + h(TK[t.toko].nama) + '</span>';
+  var siapa = t.oleh && A[t.oleh] && (t.oleh !== S.me || A[a].bersama) ? '<span class="tl-who" style="background:' + h(A[t.oleh].warna || '#999') + '">' + h(A[t.oleh].nama.charAt(0)) + '</span>' : '';
+  var cat = String(t.catatan || '').trim(), judul = txJudul(t);
+  var dp = t.jenis === 'Transfer' ? (D[t.dompet] ? D[t.dompet].nama : '') + ' → ' + (D[t.tujuan] ? D[t.tujuan].nama : '') : (D[t.dompet] ? D[t.dompet].nama : '');
+  return '<button class="tl-tx" data-act="detail" data-id="' + h(t.id) + '" style="--c:' + h(warna) + '"><span class="tl-ic">' + txIco(t, 44) + siapa + '</span>' +
+    '<span class="tl-m"><b>' + h(judul) + '</b>' + (tags ? '<span class="tl-tags">' + tags + '</span>' : '') +
+    (cat && norm(cat) !== norm(judul) ? '<small class="tl-cat">“' + h(cat.length > 60 ? cat.slice(0, 58) + '…' : cat) + '”</small>' : '') + '</span>' +
+    '<span class="tl-r"><b class="num ' + (ar > 0 ? 'in' : ar < 0 ? 'out' : '') + '">' + (ar > 0 ? '+' : ar < 0 ? '−' : '') + rp(t.jumlah) + '</b><small>' + h(dp) + '</small></span></button>';
+}
 function txRow(t){
   var a = S.akun;
   var masuk = t.jenis === 'Pemasukan' || (t.jenis === 'Transfer' && D[t.tujuan] && D[t.tujuan].akun === a && !(D[t.dompet] && D[t.dompet].akun === a));
@@ -1891,12 +1934,18 @@ function viewRiwayat(){
     return '<button class="' + (f === x[0] ? 'on' : '') + '" data-act="filter" data-v="' + x[0] + '">' + x[1] + '</button>';
   }).join('') + '</div>';
   if (!list.length) return html + '<div class="card"><div class="empty">Tidak ada catatan di bulan ini.</div></div></div>';
-  var grup = {};
-  list.forEach(function(t){ (grup[t.tanggal] = grup[t.tanggal] || []).push(t); });
-  Object.keys(grup).sort().reverse().forEach(function(tg){
-    var out = jumlahBy(grup[tg], function(t){ return t.jenis === 'Pengeluaran'; });
-    html += '<div class="day"><span>' + tglPanjang(tg) + '</span><span class="num">' + (out ? '−' + rp(out) : '') + '</span></div><div class="card" style="padding-top:4px;padding-bottom:4px">' + grup[tg].map(txRow).join('') + '</div>';
-  });
+  var grup = {}, tIn = 0, tOut = 0;
+  list.forEach(function(t){ (grup[t.tanggal] = grup[t.tanggal] || []).push(t); var ar = arahTx(t, a); if (ar > 0) tIn += t.jumlah; else if (ar < 0) tOut += t.jumlah; });
+  html += '<div class="tl-sum"><div><small>Masuk</small><b class="in num">+' + singkat(tIn) + '</b></div><div><small>Keluar</small><b class="out num">−' + singkat(tOut) + '</b></div><div><small>' + list.length + ' catatan</small><b class="num ' + (tIn - tOut >= 0 ? 'in' : 'out') + '">' + (tIn - tOut >= 0 ? '+' : '−') + singkat(Math.abs(tIn - tOut)) + '</b></div></div>';
+  var t0 = today();
+  html += '<div class="tl2">' + Object.keys(grup).sort().reverse().map(function(tg){
+    var xs = grup[tg], net = 0; xs.forEach(function(t){ net += arahTx(t, a) * t.jumlah; });
+    var d = tglObj(tg), rel = tg === t0 ? 'Hari ini' : tg === geserTgl(t0, -1) ? 'Kemarin' : '';
+    return '<div class="tl-d"><span class="tl-node ' + (net > 0 ? 'up' : net < 0 ? 'down' : '') + '"><b>' + d.getDate() + '</b><small>' + HARI[d.getDay()].slice(0, 3) + '</small></span>' +
+      '<div class="tl-h"><span>' + (rel ? '<i>' + rel + '</i>' : h(HARI[d.getDay()])) + ' <small>' + d.getDate() + ' ' + BLN[d.getMonth()] + ' · ' + xs.length + ' catatan</small></span>' +
+      (net ? '<span class="tl-net ' + (net > 0 ? 'in' : 'out') + '">' + (net > 0 ? '↑ ' : '↓ ') + rp(Math.abs(net)) + '</span>' : '') + '</div>' +
+      xs.map(txKartu).join('') + '</div>';
+  }).join('') + '</div>';
   return html + '</div>';
 }
 
