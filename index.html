@@ -1187,7 +1187,7 @@ function terimaAwal(d, dariCache){
   if (!d || d.status !== 'ok') return;
   var awal = !S.cfg;
   terima(d); S.me = d.me; S.email = d.email; siapkanSeen();
-  if (!dariCache) { var mg1 = migrasiSub(), mg2 = migrasiAng(); if (mg1 || mg2) simpanCfg(true); if (S.migInfo && S.migInfo.length) setTimeout(function(){ toast('Anggaran lama dipindah: ' + S.migInfo.join(', ')); S.migInfo = null; }, 900); }
+  if (!dariCache) { var mg1 = migrasiSub(), mg2 = migrasiAng(), mg3 = migrasiHewan(); if (mg1 || mg2 || mg3) simpanCfg(true); if (S.migInfo && S.migInfo.length) setTimeout(function(){ toast('Anggaran lama dipindah: ' + S.migInfo.join(', ')); S.migInfo = null; }, 900); }
   if (!S.akun || !A[S.akun]) S.akun = S.me;
   if (!S.month) S.month = ym(today());
   if (!S.chat.length) sapa();
@@ -1195,7 +1195,7 @@ function terimaAwal(d, dariCache){
   if (awal || !$('sheet').classList.contains('hidden') === false) render();
   if (!dariCache) simpanSnap();
 }
-function terima(d){ S.cfg = d.cfg; S.ver = d.ver; S.tx = d.tx || []; S.ikon = d.ikon || {}; S.url = d.url || ''; var ag = d.agenda || []; S.agenda = ag.filter(function(x){ return !x.tipe; }); S.tugas = ag.filter(function(x){ return x.tipe === 'tugas'; }); S.talangan = ag.filter(function(x){ return x.tipe === 'talangan'; }); S.wish = ag.filter(function(x){ return x.tipe === 'wish'; }); S.momen = d.momen || []; S.kotak = (d.kotak || []).filter(function(k){ return !(S.kotakSudah || {})[k.id]; }); indeks(); }
+function terima(d){ S.cfg = d.cfg; S.ver = d.ver; S.tx = d.tx || []; S.ikon = d.ikon || {}; S.url = d.url || ''; var ag = d.agenda || []; S.agenda = ag.filter(function(x){ return !x.tipe; }); S.tugas = ag.filter(function(x){ return x.tipe === 'tugas'; }); S.talangan = ag.filter(function(x){ return x.tipe === 'talangan'; }); S.wish = ag.filter(function(x){ return x.tipe === 'wish'; }); S.momen = d.momen || []; S.kotak = (d.kotak || []).filter(function(k){ return !(S.kotakSudah || {})[k.id]; }); indeks(); rapikanTx(); }
 function muatUlang(diam){
   if (!S.token) return Promise.resolve();
   return call('ambilSemua').then(function(d){
@@ -2222,6 +2222,29 @@ function migrasiSub(){
   S.cfg.mig1 = true; indeks();
   return true;
 }
+function migrasiHewan(){
+  if (!S.cfg || S.cfg.mig3) return false;
+  S.cfg.akun.forEach(function(a){
+    if (a.bersama) return;
+    var ks = S.cfg.kantong.filter(function(k){ return k.akun === a.id && k.tipe === 'keluar'; });
+    if (ks.some(function(k){ return /hewan/i.test(k.nama); })) return;
+    var rt = ks.filter(function(k){ return k.nama === 'Rumah Tangga'; })[0], lama = null;
+    if (rt) { lama = (rt.sub || []).filter(function(sb){ return /hewan/i.test(sb.nama); })[0]; if (lama) rt.sub = rt.sub.filter(function(sb){ return sb !== lama; }); }
+    var makan = lama || {id:uid('s')};
+    Object.assign(makan, {nama:'Makanan & Snack', icon:'paw', kata:['wetfood','wet food','dryfood','dry food','makanan kucing','makanan anjing','whiskas','me-o','meo','royal canin','snack kucing','kucing','anjing']});
+    var baru = {id:uid('k'), akun:a.id, nama:'Hewan Peliharaan', tipe:'keluar', icon:'paw', warna:'#C98A4B', sub:[
+      makan,
+      {id:uid('s'), nama:'Pasir & Perlengkapan', icon:'box', kata:['pasir kucing','pasir','litter','kandang','mainan kucing','tempat makan kucing','kalung kucing']},
+      {id:uid('s'), nama:'Grooming', icon:'sparkles', kata:['grooming','mandi kucing','potong kuku kucing']},
+      {id:uid('s'), nama:'Dokter & Vaksin', icon:'heart', kata:['dokter hewan','vet','vaksin kucing','vaksin','obat kucing','obat cacing','steril kucing']},
+      {id:uid('s'), nama:'Lain-lain', icon:'dots', kata:[]}]};
+    var pos = rt ? S.cfg.kantong.indexOf(rt) + 1 : S.cfg.kantong.length;
+    S.cfg.kantong.splice(pos, 0, baru);
+  });
+  S.cfg.mig3 = true; indeks(); rapikanTx();
+  return true;
+}
+function rapikanTx(){ (S.tx || []).forEach(function(t){ if (t.sub && SB[t.sub] && t.kantong !== SB[t.sub].k.id) t.kantong = SB[t.sub].k.id; }); }
 function migrasiAng(){
   if (!S.cfg || S.cfg.mig2) return false;
   var hasil = [];
