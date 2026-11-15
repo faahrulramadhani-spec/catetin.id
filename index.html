@@ -123,6 +123,16 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .tdm small{color:var(--muted);font-size:12.5px}
 .tags{display:flex;flex-wrap:wrap;gap:5px}.tags span{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted)}
 .tags .tg-lewat{background:#FBE3DD;color:var(--tomat)}.tags .tg-b{background:#E7EEF5;color:#2E4A6B}
+.tgr{display:flex;align-items:center;gap:12px;padding:10px 0}.tgr+.tgr{border-top:1px solid var(--line)}
+.tgr .mid{flex:1;min-width:0;display:flex;flex-direction:column}.tgr .mid b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tgr .mid small{color:var(--muted);font-size:12.5px}
+.tgr .num{font-weight:800;font-size:14px}
+.tgh{border:2px solid #FCEBCB}
+.tal-sum{display:flex;flex-direction:column;gap:4px;background:var(--soft);border-radius:14px;padding:10px 12px;margin:2px 0 6px;font-size:14px}
+.wi{width:38px;height:38px;border-radius:12px;background:var(--soft);display:grid;place-items:center;font-size:20px;flex:none}
+.cd-row{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 12px;margin:0 -2px 6px;scroll-snap-type:x mandatory;overscroll-behavior-x:contain}
+.cd{flex:none;width:132px;scroll-snap-align:start;background:var(--card);border-radius:20px;padding:14px 12px;box-shadow:var(--sh);display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.cd-i{font-size:22px}.cd b{font-size:26px;line-height:1.1;margin-top:6px}.cd small{color:var(--muted);font-size:12px}
+.cd-n{font-weight:700;font-size:13.5px;margin-top:8px;line-height:1.25}.cd-d{font-size:11.5px;color:var(--muted)}
 .perbar{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:var(--card);border-radius:18px;padding:12px 16px;margin:-4px 0 12px;box-shadow:var(--sh)}
 .perbar small{display:block;color:var(--muted);font-size:12px;font-weight:600}.perbar b{font-size:16px}.perbar .r{text-align:right;font-weight:700;font-size:14px}
 .bar.thin{height:5px;margin-top:5px}
@@ -1146,7 +1156,7 @@ function simpanSnap(){
   clearTimeout(simpanSnap._t);
   simpanSnap._t = setTimeout(function(){
     if (!S.cfg || !S.token) return;
-    try { localStorage.setItem('kk_snap', JSON.stringify({status:'ok', me:S.me, email:S.email, ver:S.ver, cfg:S.cfg, tx:S.tx, ikon:S.ikon, url:S.url, agenda:(S.agenda || []).concat(S.tugas || []), momen:S.momen})); } catch(e){}
+    try { localStorage.setItem('kk_snap', JSON.stringify({status:'ok', me:S.me, email:S.email, ver:S.ver, cfg:S.cfg, tx:S.tx, ikon:S.ikon, url:S.url, agenda:(S.agenda || []).concat(S.tugas || [], S.talangan || [], S.wish || []), momen:S.momen})); } catch(e){}
   }, 400);
 }
 function terimaAwal(d, dariCache){
@@ -1161,7 +1171,7 @@ function terimaAwal(d, dariCache){
   if (awal || !$('sheet').classList.contains('hidden') === false) render();
   if (!dariCache) simpanSnap();
 }
-function terima(d){ S.cfg = d.cfg; S.ver = d.ver; S.tx = d.tx || []; S.ikon = d.ikon || {}; S.url = d.url || ''; S.agenda = (d.agenda || []).filter(function(x){ return x.tipe !== 'tugas'; }); S.tugas = (d.agenda || []).filter(function(x){ return x.tipe === 'tugas'; }); S.momen = d.momen || []; S.kotak = (d.kotak || []).filter(function(k){ return !(S.kotakSudah || {})[k.id]; }); indeks(); }
+function terima(d){ S.cfg = d.cfg; S.ver = d.ver; S.tx = d.tx || []; S.ikon = d.ikon || {}; S.url = d.url || ''; var ag = d.agenda || []; S.agenda = ag.filter(function(x){ return !x.tipe; }); S.tugas = ag.filter(function(x){ return x.tipe === 'tugas'; }); S.talangan = ag.filter(function(x){ return x.tipe === 'talangan'; }); S.wish = ag.filter(function(x){ return x.tipe === 'wish'; }); S.momen = d.momen || []; S.kotak = (d.kotak || []).filter(function(k){ return !(S.kotakSudah || {})[k.id]; }); indeks(); }
 function muatUlang(diam){
   if (!S.token) return Promise.resolve();
   return call('ambilSemua').then(function(d){
@@ -1510,6 +1520,161 @@ function bukaSemuaDompet(){
       return '<button class="row" data-act="dompet-detail" data-id="' + h(d.id) + '">' + ico(d, 40) + '<div class="mid"><div class="t">' + h(d.nama) + '</div><div class="s">' + h(namaJenis(d.jenis)) + '</div></div><span class="v num ' + ((sal[d.id] || 0) < 0 ? 'out' : '') + '">' + rp(sal[d.id] || 0) + '</span></button>';
     }).join('') + '</div><button class="btn" data-act="katalog">+ Tambah Dompet</button>');
 }
+/* ---------- item bersama (talangan, wishlist) ---------- */
+function simpanBenda(kol, o, pesan){
+  if (!o.id) o.id = kol.slice(0, 2) + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  o.oleh = o.oleh || S.me;
+  var lama = (S[kol] || []).filter(function(x){ return x.id === o.id; })[0];
+  S[kol] = (S[kol] || []).filter(function(x){ return x.id !== o.id; }); S[kol].push(o); render();
+  return call('simpanItem', 'agenda', o).then(function(){ if (pesan) toast(pesan); }).catch(function(e){
+    S[kol] = S[kol].filter(function(x){ return x.id !== o.id; }); if (lama) S[kol].push(lama); render(); toast('Gagal: ' + msg(e)); });
+}
+function hapusBenda(kol, id, pesan){ S[kol] = (S[kol] || []).filter(function(x){ return x.id !== id; }); render(); call('hapusItem', 'agenda', id).then(function(){ if (pesan) toast(pesan); }).catch(function(e){ toast(msg(e)); }); }
+
+/* ---------- TAGIHAN RUTIN ---------- */
+function tagihanAkun(a){ return (S.cfg.tagihan || []).filter(function(x){ return x.akun === a; }); }
+function jatuhTempo(tg, m){ return m + '-' + pad(Math.min(Number(tg.tgl) || 1, daysIn(m))); }
+function tagihanDekat(a){
+  var t0 = today(), m = ym(t0), out = [];
+  tagihanAkun(a).forEach(function(tg){
+    [shiftM(m, -1), m, shiftM(m, 1)].forEach(function(mm){
+      var due = jatuhTempo(tg, mm), sel = selisihHari(t0, due);
+      if ((tg.lunas || {})[mm] || sel > 7 || sel < -20) return;
+      if (tg.dibuat && due < tg.dibuat) return;
+      out.push({tg:tg, bulan:mm, due:due, sel:sel});
+    });
+  });
+  return out.sort(function(x, y){ return x.due < y.due ? -1 : 1; });
+}
+function kartuTagihan(a){
+  if (S.akun !== a || A[a].bersama) return '';
+  var xs = tagihanDekat(a); if (!xs.length) return '';
+  return '<div class="card tgh"><div class="h2r"><h3>🧾 Tagihan dekat</h3><button class="lnk2" data-act="tagihan-kelola">Atur ›</button></div>' + xs.map(function(x){
+    var lbl = x.sel < 0 ? '<span class="out">telat ' + (-x.sel) + ' hari</span>' : x.sel === 0 ? '<span class="out">hari ini</span>' : x.sel === 1 ? 'besok' : x.sel + ' hari lagi';
+    var sb = SB[x.tg.sub];
+    return '<div class="tgr">' + (sb ? subIco(x.tg.sub, 38) : ico({icon:'receipt'}, 38)) + '<div class="mid"><b>' + h(x.tg.nama) + '</b><small>' + h(tglPendek(x.due)) + ' · ' + lbl + (Number(x.tg.nominal) ? ' · ±' + rp(x.tg.nominal) : '') + '</small></div>' +
+      '<button class="mini-btn" data-act="tagihan-bayar" data-id="' + h(x.tg.id) + '" data-v="' + x.bulan + '">Sudah bayar</button></div>';
+  }).join('') + '</div>';
+}
+function opsiSub(a){ var o = [['', '— pilih kategori —']]; kantongAkun(a, 'keluar').forEach(function(k){ (k.sub || []).forEach(function(sb){ o.push([sb.id, k.nama + ' › ' + sb.nama]); }); }); return o; }
+function formTagihan(id){
+  var a = S.me, tg = id ? (S.cfg.tagihan || []).filter(function(x){ return x.id === id; })[0] : null;
+  var hari = []; for (var i = 1; i <= 31; i++) hari.push([String(i), 'Tanggal ' + i]);
+  bukaForm({title: tg ? 'Ubah tagihan' : 'Tagihan rutin baru',
+    top:'<div class="hint" style="margin:-6px 0 8px">Muncul di Ringkasin 7 hari sebelum jatuh tempo. Ketuk "Sudah bayar" untuk langsung mencatatnya.</div>',
+    fields:[{k:'nama', label:'Nama tagihan', ph:'cth: Listrik PLN', max:40},
+      {k:'tgl', label:'Jatuh tempo tiap bulan', type:'select', opts:hari},
+      {k:'nominal', label:'Perkiraan nominal (boleh dikosongkan)', type:'money'},
+      {k:'sub', label:'Kategori', type:'select', opts:opsiSub(a)},
+      {k:'dompet', label:'Biasanya bayar pakai', type:'select', opts:[['', '— nanti dipilih —']].concat(dompetAkun(a).map(function(d){ return [d.id, d.nama]; }))}],
+    data: tg ? Object.assign({}, tg, {tgl:String(tg.tgl)}) : {tgl:'20'},
+    onSave:function(d){
+      if (!String(d.nama || '').trim()) return toast('Isi nama tagihannya');
+      S.cfg.tagihan = S.cfg.tagihan || [];
+      if (tg) Object.assign(tg, d, {tgl:Number(d.tgl)});
+      else S.cfg.tagihan.push(Object.assign({id:uid('tg'), akun:a, lunas:{}, dibuat:geserTgl(today(), -20)}, d, {tgl:Number(d.tgl)}));
+      simpanCfg(); kelolaTagihan(); render(); toast('Tagihan disimpan');
+    },
+    onDelete: tg ? function(){ S.cfg.tagihan = S.cfg.tagihan.filter(function(x){ return x.id !== tg.id; }); simpanCfg(); kelolaTagihan(); render(); toast('Tagihan dihapus'); } : null});
+}
+function kelolaTagihan(){
+  var xs = tagihanAkun(S.me).slice().sort(function(x, y){ return x.tgl - y.tgl; }), m = ym(today());
+  bukaSheet(head('Tagihan rutin', 'Listrik, air, kuota, langganan, cicilan…') + '<div class="card">' + (xs.length ? xs.map(function(tg){
+    var lunas = (tg.lunas || {})[m];
+    return '<button class="row" data-act="tagihan-edit" data-id="' + h(tg.id) + '">' + (SB[tg.sub] ? subIco(tg.sub, 36) : ico({icon:'receipt'}, 36)) + '<div class="mid"><div class="t">' + h(tg.nama) + '</div><div class="s">Tiap tgl ' + tg.tgl + (Number(tg.nominal) ? ' · ±' + rp(tg.nominal) : '') + '</div></div><span class="' + (lunas ? 'in' : 'hint') + '">' + (lunas ? '✓ ' + BLN[+m.slice(5, 7) - 1] : 'belum') + '</span></button>';
+  }).join('') : '<div class="empty">Belum ada tagihan rutin.</div>') + '</div><button class="btn" data-act="tagihan-baru">+ Tambah tagihan</button>');
+}
+
+/* ---------- TALANGAN ---------- */
+function talanganSaya(){ return (S.talangan || []).filter(function(o){ return o.oleh === S.me || o.pihak === S.me; }); }
+// arah dari sudut pandangku: +jumlah = orang lain utang ke aku
+function nilaiTal(o){ var aku = o.oleh === S.me; var plus = o.arah === 'nalangin'; if (!aku) plus = !plus; return plus ? o.jumlah : -o.jumlah; }
+function namaPihak(o){ if (o.oleh !== S.me) return A[o.oleh] ? A[o.oleh].nama : 'Pasangan'; return o.pihak && A[o.pihak] ? A[o.pihak].nama : (o.nama || 'Teman'); }
+function kartuTalangan(){
+  var xs = talanganSaya().filter(function(o){ return !o.lunas; });
+  var per = {}; xs.forEach(function(o){ var n = namaPihak(o); per[n] = (per[n] || 0) + nilaiTal(o); });
+  var html = '<div class="card tal"><div class="h2r"><h3>🤝 Talangan</h3><button class="lnk2" data-act="tal-baru">+ Catat</button></div>';
+  if (!xs.length) return html + '<div class="hint">Belum ada. Catat kalau kamu nalangin atau ditalangin, biar nggak lupa siapa utang siapa.</div></div>';
+  html += '<div class="tal-sum">' + Object.keys(per).map(function(n){ var v = per[n];
+    return v === 0 ? '<span>Sama ' + h(n) + ': impas 👌</span>' : v > 0 ? '<span><b>' + h(n) + '</b> utang ke kamu <b class="in">' + rp(v) + '</b></span>' : '<span>Kamu utang ke <b>' + h(n) + '</b> <b class="out">' + rp(-v) + '</b></span>'; }).join('') + '</div>';
+  html += xs.sort(function(x, y){ return x.tanggal < y.tanggal ? 1 : -1; }).map(function(o){ var v = nilaiTal(o);
+    return '<div class="tgr"><div class="mid"><b>' + h(o.judul) + '</b><small>' + h(tglPendek(o.tanggal)) + ' · ' + (v > 0 ? h(namaPihak(o)) + ' ditalangin kamu' : 'kamu ditalangin ' + h(namaPihak(o))) + '</small></div>' +
+      '<span class="num ' + (v > 0 ? 'in' : 'out') + '">' + rp(Math.abs(v)) + '</span><button class="mini-btn" data-act="tal-lunas" data-id="' + h(o.id) + '">Lunas</button></div>'; }).join('');
+  var lunas = talanganSaya().filter(function(o){ return o.lunas; }).length;
+  return html + (lunas ? '<div class="hint" style="margin-top:6px">' + lunas + ' talangan sudah lunas</div>' : '') + '</div>';
+}
+function formTalangan(){
+  var ps = pasanganSaya(), pihak = []; if (ps) pihak.push([ps.id, ps.nama]); pihak.push(['lain', 'Orang lain']);
+  bukaForm({title:'Catat talangan',
+    fields:[{k:'judul', label:'Untuk apa', ph:'cth: Makan siang, bensin', max:60},
+      {k:'jumlah', label:'Jumlah', type:'money'},
+      {k:'arah', label:'Siapa yang nalangin', type:'select', opts:[['nalangin', 'Aku nalangin dia'], ['ditalangin', 'Dia nalangin aku']]},
+      {k:'pihak', label:'Sama siapa', type:'select', opts:pihak},
+      {k:'nama', label:'Nama (kalau orang lain)', max:30},
+      {k:'tanggal', label:'Tanggal', type:'date'}],
+    data:{arah:'nalangin', pihak:ps ? ps.id : 'lain', tanggal:today()},
+    onSave:function(d){
+      if (!d.jumlah) return toast('Isi jumlahnya'); if (!String(d.judul || '').trim()) return toast('Isi keterangannya');
+      if (d.pihak === 'lain' && !String(d.nama || '').trim()) return toast('Isi nama orangnya');
+      var o = {tipe:'talangan', judul:d.judul.trim(), jumlah:d.jumlah, arah:d.arah, pihak:d.pihak === 'lain' ? '' : d.pihak, nama:d.pihak === 'lain' ? d.nama.trim() : '', tanggal:/^\d{4}-\d{2}-\d{2}$/.test(d.tanggal) ? d.tanggal : today(), lunas:false};
+      tutup(); simpanBenda('talangan', o, 'Talangan dicatat');
+    }});
+}
+
+/* ---------- HITUNG MUNDUR & WISHLIST ---------- */
+function tanggalPenting(){
+  var b = S.cfg.berdua || {}, t0 = today(), out = [];
+  if (b.sejak) { var th = +t0.slice(0, 4), d = th + b.sejak.slice(4); if (d < t0) d = (th + 1) + b.sejak.slice(4); out.push({id:'_jadian', nama:'Anniversary ke-' + (+d.slice(0, 4) - +b.sejak.slice(0, 4)), tanggal:d, ikon:'💞', auto:1}); }
+  (b.penting || []).forEach(function(x){
+    var d = x.tanggal;
+    if (x.tahunan) { var th2 = +t0.slice(0, 4); d = th2 + x.tanggal.slice(4); if (d < t0) d = (th2 + 1) + x.tanggal.slice(4); }
+    if (d >= t0) out.push({id:x.id, nama:x.nama, tanggal:d, ikon:x.ikon || '📌'});
+  });
+  return out.sort(function(x, y){ return x.tanggal < y.tanggal ? -1 : 1; });
+}
+function kartuHitung(){
+  var xs = tanggalPenting(), t0 = today();
+  var html = '<div class="sec"><h3>Hitung Mundur</h3><button data-act="penting-baru">+ Tanggal</button></div>';
+  if (!xs.length) return html + '<div class="card"><div class="empty">Tambahkan tanggal penting: anniversary, lamaran, nikah, ulang tahun…</div></div>';
+  return html + '<div class="cd-row">' + xs.slice(0, 6).map(function(x){ var n = selisihHari(t0, x.tanggal);
+    return '<button class="cd" data-act="penting-edit" data-id="' + h(x.id) + '"><span class="cd-i">' + x.ikon + '</span><b class="num">' + (n === 0 ? 'Hari ini!' : n.toLocaleString('id-ID')) + '</b>' + (n ? '<small>hari lagi</small>' : '<small>🎉</small>') + '<span class="cd-n">' + h(x.nama) + '</span><span class="cd-d">' + h(tglPendek(x.tanggal)) + ' ' + x.tanggal.slice(0, 4) + '</span></button>'; }).join('') + '</div>';
+}
+function formPenting(id){
+  var b = S.cfg.berdua = S.cfg.berdua || {};
+  if (id === '_jadian') return bukaForm({title:'Tanggal jadian', fields:[{k:'sejak', label:'Bersama sejak', type:'date'}], data:{sejak:b.sejak || ''},
+    onSave:function(d){ if (/^\d{4}-\d{2}-\d{2}$/.test(d.sejak)) b.sejak = d.sejak; simpanCfg(); tutup(); render(); }});
+  var x = id ? (b.penting || []).filter(function(y){ return y.id === id; })[0] : null;
+  bukaForm({title: x ? 'Ubah tanggal penting' : 'Tanggal penting',
+    fields:[{k:'nama', label:'Acara', ph:'cth: Hari pernikahan', max:40}, {k:'tanggal', label:'Tanggal', type:'date'},
+      {k:'ikon', label:'Emoji', type:'select', opts:[['💍','💍 Nikah / lamaran'],['🎂','🎂 Ulang tahun'],['✈️','✈️ Liburan'],['🏠','🏠 Rumah'],['🎓','🎓 Wisuda'],['📌','📌 Lainnya']]},
+      {k:'tahunan', label:'Berulang tiap tahun?', type:'select', opts:[['', 'Tidak, sekali saja'], ['1', 'Ya, tiap tahun']]}],
+    data: x ? Object.assign({}, x, {tahunan:x.tahunan ? '1' : ''}) : {tanggal:'', ikon:'💍', tahunan:''},
+    onSave:function(d){
+      if (!String(d.nama || '').trim() || !/^\d{4}-\d{2}-\d{2}$/.test(d.tanggal)) return toast('Isi acara dan tanggalnya');
+      b.penting = b.penting || []; var n = {nama:d.nama.trim(), tanggal:d.tanggal, ikon:d.ikon, tahunan:!!d.tahunan};
+      if (x) Object.assign(x, n); else b.penting.push(Object.assign({id:uid('pt')}, n));
+      simpanCfg(); tutup(); render();
+    },
+    onDelete: x ? function(){ b.penting = b.penting.filter(function(y){ return y.id !== x.id; }); simpanCfg(); tutup(); render(); } : null});
+}
+var WISH_K = [['tempat','📍 Tempat'],['makan','🍜 Makanan'],['barang','🎁 Barang'],['kegiatan','🎡 Kegiatan']];
+function kartuWish(){
+  var f = S.wishF || 'semua', xs = (S.wish || []).filter(function(o){ return !o.selesai && (f === 'semua' || o.kat === f); }).sort(function(a, b){ return (b.dibuat || 0) - (a.dibuat || 0); });
+  var done = (S.wish || []).filter(function(o){ return o.selesai; }).length;
+  var html = '<div class="sec"><h3>Wishlist Berdua</h3><button data-act="wish-baru">+ Wish</button></div><div class="card">';
+  html += '<div class="pills" style="margin-bottom:6px">' + [['semua','Semua']].concat(WISH_K).map(function(k){ return '<button class="' + (f === k[0] ? 'on' : '') + '" data-act="wish-f" data-v="' + k[0] + '">' + k[1] + '</button>'; }).join('') + '</div>';
+  html += xs.length ? xs.map(function(o){ var k = WISH_K.filter(function(y){ return y[0] === o.kat; })[0];
+    return '<div class="tgr"><span class="wi">' + (k ? k[1].split(' ')[0] : '✨') + '</span><div class="mid"><b>' + h(o.judul) + '</b><small>' + (o.catatan ? h(o.catatan) + ' · ' : '') + 'dari ' + h(A[o.oleh] ? A[o.oleh].nama : '') + '</small></div><button class="mini-btn" data-act="wish-ok" data-id="' + h(o.id) + '">Kesampaian ✓</button></div>'; }).join('')
+    : '<div class="empty">Tempat yang mau dikunjungi, makanan yang mau dicoba, barang impian… tulis di sini.</div>';
+  return html + (done ? '<div class="hint" style="margin-top:6px">✨ ' + done + ' wish sudah kesampaian</div>' : '') + '</div>';
+}
+function formWish(){
+  bukaForm({title:'Wish baru', fields:[{k:'judul', label:'Apa yang kalian mau?', ph:'cth: Ke Labuan Bajo', max:60},
+    {k:'kat', label:'Jenis', type:'select', opts:WISH_K}, {k:'catatan', label:'Catatan (opsional)', ph:'cth: pas libur akhir tahun', max:80}],
+    data:{kat:'tempat'},
+    onSave:function(d){ if (!String(d.judul || '').trim()) return toast('Isi wish-nya'); tutup(); simpanBenda('wish', {tipe:'wish', judul:d.judul.trim(), kat:d.kat, catatan:d.catatan || '', tanggal:today(), selesai:false, dibuat:Date.now()}, 'Wish ditambahkan ✨'); }});
+}
+
 /* ---------- TO-DO ---------- */
 var PRIO = [['tinggi','Penting','#D9553A'],['sedang','Biasa','#E5A93B'],['rendah','Santai','#7FA06B']];
 var LABEL_TG = [['rumah','🏠 Rumah'],['kantor','💼 Kantor'],['pribadi','🙋 Pribadi'],['belanja','🛒 Belanja'],['urusan','📄 Urusan']];
@@ -1663,7 +1828,7 @@ function viewHome(){
   var bulan = S.tx.filter(function(t){ return t.akun === a && ym(t.tanggal) === m; });
   var masuk = jumlahBy(bulan, function(t){ return t.jenis === 'Pemasukan'; });
   var keluar = jumlahBy(bulan, function(t){ return t.jenis === 'Pengeluaran'; });
-  var html = heroHome(a, total, totalTabungan(a), masuk, keluar) + '<div class="wrap lift">' + kartuKotak(a);
+  var html = heroHome(a, total, totalTabungan(a), masuk, keluar) + '<div class="wrap lift">' + kartuKotak(a) + kartuTagihan(a);
   urutanKartu().forEach(function(x){
     if (!x.on) return;
     var c = '';
@@ -1722,7 +1887,7 @@ function viewRiwayat(){
     if (f === 'transfer') return t.jenis === 'Transfer';
     return true;
   }));
-  var html = pageHead('Catetan') + '<div class="wrap">' + monthNav() + '<div class="pills">' + [['semua','Semua'],['keluar','Pengeluaran'],['masuk','Pemasukan'],['transfer','Transfer']].map(function(x){
+  var html = pageHead('Catetan') + '<div class="wrap">' + monthNav() + (A[a].bersama ? '' : kartuTalangan()) + '<div class="pills">' + [['semua','Semua'],['keluar','Pengeluaran'],['masuk','Pemasukan'],['transfer','Transfer']].map(function(x){
     return '<button class="' + (f === x[0] ? 'on' : '') + '" data-act="filter" data-v="' + x[0] + '">' + x[1] + '</button>';
   }).join('') + '</div>';
   if (!list.length) return html + '<div class="card"><div class="empty">Tidak ada catatan di bulan ini.</div></div></div>';
@@ -2245,7 +2410,7 @@ function simpanTambah(){
   if (x.draft && S.draft && S.draft[x.draft]) { var dd = S.draft[x.draft]; dd.t = t; tutup(); simpanDraft(x.draft); return; }
   var b = $('a-btn'); b.disabled = true; b.textContent = 'Menyimpan…';
   simpanTx(t).then(function(){
-    tutup(); if (x.kotak) kotakBeres(x.kotak, 'simpan', t); render();
+    tutup(); if (x.kotak) kotakBeres(x.kotak, 'simpan', t); if (x.tagihan) { var tgx = (S.cfg.tagihan || []).filter(function(y){ return y.id === x.tagihan.id; })[0]; if (tgx) { tgx.lunas = tgx.lunas || {}; tgx.lunas[x.tagihan.bulan] = t.tanggal; if (!Number(tgx.nominal)) tgx.nominal = t.jumlah; simpanCfg(true); } } render();
     var info = infoBudget(t).replace(/<br>/g, ' · ').replace(/<[^>]+>/g, '');
     toast('Tersimpan ✓' + (info ? ' · ' + info : ''));
   }).catch(function(e){ b.disabled = false; b.textContent = 'Simpan'; toast(msg(e)); });
@@ -2315,7 +2480,9 @@ function viewAtur(){
   var html = pageHead('Aturin') + '<div class="wrap">';
   html += '<div class="card"><div class="row">' + ico({icon:'smile', warna:me.warna}, 48) + '<div class="mid"><div class="t">' + h(me.nama) + '</div><div class="s">Masuk sebagai ' + h(S.email) + '</div></div></div></div>';
 
-  html += '<div class="sec"><h3>Anggaran</h3><button data-act="nav" data-v="anggaran">Buka ›</button></div>';
+  html += '<div class="sec"><h3>Uang rutin</h3></div><div class="card">' +
+    '<button class="row" data-act="nav" data-v="anggaran"><div class="mid"><div class="t">Anggaran</div><div class="s">Batas per kategori & periode gajian</div></div><span class="go">›</span></button>' +
+    '<button class="row" data-act="tagihan-kelola"><div class="mid"><div class="t">Tagihan rutin</div><div class="s">' + (tagihanAkun(S.me).length ? tagihanAkun(S.me).length + ' tagihan · muncul di Ringkasin saat dekat jatuh tempo' : 'Listrik, air, kuota, langganan, cicilan') + '</div></div><span class="go">›</span></button></div>';
 
   html += bagianGrid('kat', 'Kategori', 'edit-kantong', '+ Kategori', kantongAkun(a).map(function(k){
     return {act:'kelola-kantong', id:k.id, ico:ico(k, 40), t:k.nama, s:(k.tipe === 'masuk' ? 'Pemasukan · ' : '') + (k.sub || []).length + ' sub', s2:(k.tipe === 'masuk' ? 'Pemasukan · ' : '') + (k.sub || []).map(function(x){ return x.nama; }).join(', ')};
@@ -2683,6 +2850,7 @@ function viewBerdua(){
   }
   html += '<div class="status"><span class="tape t2"></span><b>' + h(judul) + '</b><p>' + h(isi) + '</p>' + aksi + '</div>';
 
+  html += kartuHitung();
   // agenda
   html += '<div class="sec"><h3>Agenda Kita</h3><button data-act="agenda-baru">+ Agenda</button></div><div class="card">' +
     (nx.length ? nx.slice(0, 5).map(agendaRow).join('') : '<div class="empty">Belum ada agenda. Catat rencana date, hangout, atau acara keluarga di sini.</div>') + '</div>';
@@ -2690,6 +2858,7 @@ function viewBerdua(){
     return '<div class="ag-past"><span class="mid"><b>' + h(a.judul) + '</b><small>' + tglPendek(a.tanggal) + '</small></span><button class="mini-btn" data-act="jadi-momen" data-id="' + h(a.id) + '">+ Kenangan</button></div>';
   }).join('') + '</div>';
 
+  html += kartuWish();
   // love timeline
   html += '<div class="card tl"><div class="box-h"><h3>Love Timeline</h3><button class="lnk" data-act="timeline">Lihat semua</button></div>' +
     '<div class="tl-row">' + ms.slice(0, 8).map(polaroid).join('') +
@@ -2989,6 +3158,20 @@ document.addEventListener('click', function(e){
       break;
     case 'd-simpan': simpanDraft(id); break;
     case 'tg-tab': S.tgTab = v; render(); break;
+    case 'tagihan-kelola': kelolaTagihan(); break;
+    case 'tagihan-baru': formTagihan(); break;
+    case 'tagihan-edit': formTagihan(id); break;
+    case 'tagihan-bayar': (function(){ var tg = (S.cfg.tagihan || []).filter(function(y){ return y.id === id; })[0]; if (!tg) return; var sb = SB[tg.sub];
+      bukaTambah({akun:S.me, jenis:'Pengeluaran', jumlah:Number(tg.nominal) || '', kantong:sb ? sb.k.id : '', sub:tg.sub || '', dompet:tg.dompet || '', tanggal:today(), catatan:tg.nama + ' ' + namaBulan(v), tagihan:{id:tg.id, bulan:v}}); })(); break;
+    case 'tal-baru': formTalangan(); break;
+    case 'tal-lunas': (function(){ var o = (S.talangan || []).filter(function(y){ return y.id === id; })[0]; if (o) simpanBenda('talangan', Object.assign({}, o, {lunas:true, lunasPada:Date.now()}), 'Lunas ✓'); })(); break;
+    case 'penting-baru': formPenting(); break;
+    case 'penting-edit': formPenting(id); break;
+    case 'wish-baru': formWish(); break;
+    case 'wish-f': S.wishF = v; render(); break;
+    case 'wish-ok': (function(){ var o = (S.wish || []).filter(function(y){ return y.id === id; })[0]; if (!o) return;
+      simpanBenda('wish', Object.assign({}, o, {selesai:true, selesaiPada:Date.now()}), 'Yeay, kesampaian! 🎉');
+      setTimeout(function(){ formMomen(null, {judul:o.judul, tanggal:today(), lokasi:o.kat === 'tempat' ? o.judul : ''}); }, 400); })(); break;
     case 'tg-edit': formTugas(id); break;
     case 'tg-cek': (function(){ var o = (S.tugas || []).filter(function(x){ return x.id === id; })[0]; if (!o) return;
       var n = Object.assign({}, o, {selesai: !o.selesai, selesaiPada: o.selesai ? 0 : Date.now()});
