@@ -158,6 +158,7 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .tl-r{text-align:right;flex:none;max-width:42%;display:flex;flex-direction:column;gap:3px}.tl-r b{font-size:15px;font-weight:800}
 .tl-r small{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sal-now{background:var(--soft);border-radius:16px;padding:12px 14px;margin:-4px 0 4px}.sal-now small{display:block;color:var(--muted);font-size:12px;font-weight:600}.sal-now b{font-size:22px}
+.rinci{display:flex;align-items:center;gap:6px;background:var(--soft);border-radius:16px;padding:10px 12px;margin-bottom:10px}.rinci>div{flex:1;min-width:0}.rinci small{display:block;font-size:11px;color:var(--muted);font-weight:600}.rinci b{font-size:13.5px;white-space:nowrap}.rinci span{color:var(--muted);font-weight:800}
 .perbar{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:var(--card);border-radius:18px;padding:12px 16px;margin:-4px 0 12px;box-shadow:var(--sh)}
 .perbar small{display:block;color:var(--muted);font-size:12px;font-weight:600}.perbar b{font-size:16px}.perbar .r{text-align:right;font-weight:700;font-size:14px}
 .bar.thin{height:5px;margin-top:5px}
@@ -2300,7 +2301,7 @@ function kirimChat(text){
     var ps = parse(text.replace(/^(sesuaikan saldo|sesuaikan|saldo)\s/i, 'beli '), S.akun);
     if (ps.dompet && D[ps.dompet]) { var nyata = bacaNominal(text), dd = D[ps.dompet], kini = saldoMap()[dd.id] || 0;
       if (nyata === kini) { bot('Saldo <b>' + h(dd.nama) + '</b> sudah pas ' + rp(kini) + ' 👌'); return; }
-      bot('Saldo <b>' + h(dd.nama) + '</b> di catetin ' + rp(kini) + ', sebenarnya ' + rp(nyata) + '. Selisih <b>' + (nyata > kini ? '+' : '−') + rp(Math.abs(nyata - kini)) + '</b>.<div class="chips"><button class="chip" data-act="sal-ok" data-id="' + h(dd.id) + '" data-v="' + nyata + '">✓ Sesuaikan</button><button class="chip plain" data-act="sal-batal">Batal</button></div>');
+      bot('Saldo <b>' + h(dd.nama) + '</b> di catetin ' + rp(kini) + ', sebenarnya ' + rp(nyata) + '. Selisih <b>' + (nyata > kini ? '+' : '−') + rp(Math.abs(nyata - kini)) + '</b>.<div class="chips"><button class="chip" data-act="sal-awal" data-id="' + h(dd.id) + '" data-v="' + nyata + '">Koreksi saldo awal</button><button class="chip" data-act="sal-ok" data-id="' + h(dd.id) + '" data-v="' + nyata + '">Catat sebagai penyesuaian</button><button class="chip plain" data-act="sal-batal">Batal</button></div><div class="hint" style="margin-top:6px">Koreksi saldo awal kalau angka awalnya dulu salah (tidak masuk laporan). Catat penyesuaian untuk biaya admin/lupa catat.</div>');
       return; }
     bot('Dompet mana yang mau disesuaikan? Contoh: <b>saldo jago 2.150.000</b>'); return;
   }
@@ -2550,6 +2551,21 @@ function subPenyesuaian(akun, tipe){
   var sb = {id:uid('s'), nama:'Penyesuaian Saldo', icon:'scale', kata:[]}; (k.sub = k.sub || []).push(sb); indeks(); simpanCfg(true);
   return sb.id;
 }
+function rincianDompet(did){
+  var d = D[did], r = {awal:Number(d.saldoAwal) || 0, masuk:0, keluar:0};
+  S.tx.forEach(function(t){
+    if (t.jenis === 'Pemasukan' && t.dompet === did) r.masuk += t.jumlah;
+    else if (t.jenis === 'Pengeluaran' && t.dompet === did) r.keluar += t.jumlah;
+    else if (t.jenis === 'Transfer') { if (t.dompet === did) r.keluar += t.jumlah; if (t.tujuan === did) r.masuk += t.jumlah; }
+  });
+  r.saldo = r.awal + r.masuk - r.keluar; return r;
+}
+function koreksiAwal(did, nyata){
+  var d = D[did], r = rincianDompet(did), baru = nyata - r.masuk + r.keluar, lama = r.awal;
+  if (baru === lama) { toast('Saldo ' + d.nama + ' sudah pas ' + rp(nyata) + ' 👌'); return Promise.resolve(false); }
+  d.saldoAwal = baru; indeks();
+  return simpanCfg(true).then(function(){ render(); toast('Saldo awal ' + d.nama + ' dikoreksi ' + rp(lama) + ' → ' + rp(baru) + '. Saldo sekarang ' + rp(nyata)); return true; });
+}
 function sesuaikanSaldo(did, nyata, ket){
   var d = D[did], kini = saldoMap()[did] || 0, sel = nyata - kini;
   if (!sel) { toast('Saldo ' + d.nama + ' sudah pas ' + rp(nyata) + ' 👌'); return Promise.resolve(null); }
@@ -2562,16 +2578,23 @@ function sesuaikanSaldo(did, nyata, ket){
 function formSesuaikan(did){
   var d = D[did], kini = saldoMap()[did] || 0;
   bukaForm({title:'Sesuaikan saldo ' + d.nama,
-    top:'<div class="sal-now"><small>Saldo di catetin sekarang</small><b class="num">' + rp(kini) + '</b></div><div class="hint" style="margin:6px 0 4px">Isi saldo yang benar sesuai aplikasi bank/e-wallet. Selisihnya dicatat otomatis sebagai <b>Penyesuaian Saldo</b>.</div>',
-    fields:[{k:'nyata', label:'Saldo sebenarnya', type:'money'}, {k:'ket', label:'Keterangan (opsional)', ph:'cth: biaya admin, lupa catat', max:60}],
-    data:{nyata:''},
-    onSave:function(x){ if (x.nyata === '' || x.nyata == null) return toast('Isi saldo sebenarnya'); tutup(); sesuaikanSaldo(did, Number(x.nyata) || 0, x.ket); }});
+    top:'<div class="sal-now"><small>Saldo di catetin sekarang</small><b class="num">' + rp(kini) + '</b></div><div class="hint" style="margin:6px 0 4px">Isi saldo yang benar sesuai aplikasi bank/e-wallet.</div>',
+    fields:[{k:'nyata', label:'Saldo sebenarnya', type:'money'},
+      {k:'cara', label:'Selisihnya karena apa?', type:'select', opts:[['awal', 'Saldo awal dulu salah isi'], ['tx', 'Ada transaksi yang tak tercatat']],
+        hint:'Saldo awal salah: angka awal dikoreksi, tidak ada transaksi baru, laporan tidak berubah. Cocok kalau gaji/pengeluaran lama ikut terhitung dua kali. Transaksi tak tercatat: selisihnya dicatat sebagai Penyesuaian Saldo (biaya admin, bunga, lupa catat).'},
+      {k:'ket', label:'Keterangan (untuk pilihan kedua)', ph:'cth: biaya admin', max:60}],
+    data:{nyata:'', cara:'awal'},
+    onSave:function(x){ if (x.nyata === '' || x.nyata == null) return toast('Isi saldo sebenarnya'); tutup();
+      if (x.cara === 'tx') sesuaikanSaldo(did, Number(x.nyata) || 0, x.ket); else koreksiAwal(did, Number(x.nyata) || 0); }});
   setTimeout(function(){ var i = $('f_nyata'); if (i) { i.value = kini > 0 ? kini.toLocaleString('id-ID') : ''; i.focus(); i.select && i.select(); } }, 80);
 }
 function bukaDompetDetail(did){
   var d = D[did], sal = saldoMap();
   var list = urut(S.tx.filter(function(t){ return t.dompet === did || t.tujuan === did; })).slice(0, 15);
+  var r = rincianDompet(did);
   bukaSheet(head(d.nama, namaJenis(d.jenis)) + '<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">' + ico(d, 52) + '<div style="font-size:24px;font-weight:800" class="num">' + rp(sal[did] || 0) + '</div></div>' +
+    '<div class="rinci"><div><small>Saldo awal</small><b class="num">' + rp(r.awal) + '</b></div><span>+</span><div><small>Masuk</small><b class="num in">' + rp(r.masuk) + '</b></div><span>−</span><div><small>Keluar</small><b class="num out">' + rp(r.keluar) + '</b></div></div>' +
+    '<div class="hint" style="margin:-4px 2px 12px">Saldo awal = saldo yang diisi waktu dompet ini dibuat. Kalau saldo di sini tidak cocok dengan bank, ketuk <b>Sesuaikan saldo</b>.</div>' +
     '<div class="card">' + (list.length ? list.map(txRow).join('') : '<div class="empty">Belum ada aktivitas.</div>') + '</div>' +
     '<button class="btn" data-act="sesuaikan" data-id="' + h(did) + '">⚖️ Sesuaikan saldo</button>' +
     '<button class="btn ghost" data-act="edit-dompet" data-id="' + h(did) + '">Ubah dompet</button>');
@@ -3285,6 +3308,7 @@ document.addEventListener('click', function(e){
     case 'd-simpan': simpanDraft(id); break;
     case 'sesuaikan': formSesuaikan(id); break;
     case 'sal-ok': el.disabled = true; sesuaikanSaldo(id, Number(v)).then(function(t){ bot(t ? '✓ Saldo <b>' + h(D[id].nama) + '</b> sekarang ' + rp(Number(v)) + '.' : 'Sudah pas, tidak ada yang diubah.'); }); break;
+    case 'sal-awal': el.disabled = true; koreksiAwal(id, Number(v)).then(function(ok){ bot(ok ? '✓ Saldo awal <b>' + h(D[id].nama) + '</b> dikoreksi. Saldo sekarang ' + rp(Number(v)) + ', tanpa transaksi tambahan.' : 'Sudah pas, tidak ada yang diubah.'); }); break;
     case 'sal-batal': bot('Oke, saldo tidak diubah.'); break;
     case 'tg-tab': S.tgTab = v; render(); break;
     case 'tagihan-kelola': kelolaTagihan(); break;
