@@ -205,6 +205,7 @@ main{max-width:600px;margin:0 auto;padding-bottom:130px}
 .h-mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;position:relative}
 .h-mini div{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.16);border-radius:16px;padding:10px 11px}
 .h-mini .ar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none;font-weight:800;font-size:15px}
+.h-mini .ar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .h-mini small{display:block;font-size:11.5px;opacity:.85}
 .h-mini b{font-size:14.5px;white-space:nowrap}
 
@@ -765,7 +766,7 @@ var ICONS = {
   receipt:'<path d="M5.5 3h13v18l-2.2-1.5L14 21l-2-1.5L10 21l-2.3-1.5L5.5 21z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
   undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
   dots:'<path d="M5.5 12h.01M12 12h.01M18.5 12h.01" stroke-width="3"/>',
-  piggy:'<path d="M18.5 9.5c1 .8 1.5 2 1.5 3.5h1.5v3h-2l-1.5 2v2.5h-3V19h-5v1.5H7V18A6.5 6.5 0 0 1 10 6h4a6 6 0 0 1 3 .8L19 5v4.5z"/><path d="M15.5 11h.01"/>',
+  piggy:'<ellipse cx="9" cy="6" rx="5.5" ry="2.3"/><path d="M3.5 6v4c0 1.3 2.5 2.3 5.5 2.3s5.5-1 5.5-2.3V6"/><path d="M3.5 10v4c0 1.3 2.5 2.3 5.5 2.3"/><circle cx="16.5" cy="15.5" r="4.5"/><path d="M16.5 13.3v4.4M14.3 15.5h4.4"/>',
   ticket:'<path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 1 0 4v2h18v-2a2 2 0 0 1 0-4 2 2 0 0 1 0-4V6H3z"/><path d="M14 6v2.5M14 11v2M14 15.5V18"/>',
   book:'<path d="M3 5.5c3-1 6-1 9 1 3-2 6-2 9-1v13c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6.5v13"/>',
   music:'<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
@@ -900,7 +901,7 @@ var SVG = {
   plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   trf:'<svg viewBox="0 0 24 24"><path d="M7 4l-3 3 3 3"/><path d="M4 7h13a3 3 0 0 1 3 3"/><path d="M17 20l3-3-3-3"/><path d="M20 17H7a3 3 0 0 1-3-3"/></svg>',
   pie:'<svg viewBox="0 0 24 24"><path d="M12 3v9l7.8 4.5A9 9 0 1 1 12 3z"/><path d="M15 3.5a9 9 0 0 1 5.5 9.5"/></svg>',
-  piggy:'<svg viewBox="0 0 24 24"><path d="M19 9.5c1 .8 1.5 2 1.5 3.5h1.5v3h-2l-1.5 2v2.5h-3V19h-5v1.5h-3V18A6.5 6.5 0 0 1 10 6h4a6 6 0 0 1 3 .8L19.5 5v4.5z"/></svg>',
+  piggy:'<svg viewBox="0 0 24 24"><ellipse cx="9" cy="6" rx="5.5" ry="2.3"/><path d="M3.5 6v4c0 1.3 2.5 2.3 5.5 2.3s5.5-1 5.5-2.3V6"/><path d="M3.5 10v4c0 1.3 2.5 2.3 5.5 2.3"/><circle cx="16.5" cy="15.5" r="4.5"/><path d="M16.5 13.3v4.4M14.3 15.5h4.4"/></svg>',
   chart:'<svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg>',
   tag:'<svg viewBox="0 0 24 24"><path d="M3 12V4h8l9 9-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/></svg>',
   wallet:'<svg viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H18v4"/><path d="M4 6.5V18a2 2 0 0 0 2 2h14V8H6.5A2.5 2.5 0 0 1 4 6.5z"/></svg>',
@@ -1263,7 +1264,7 @@ function arahTx(t, a){
 function txKartu(t){
   var a = S.akun, ar = arahTx(t, a), x = SB[t.sub], warna = t.jenis === 'Transfer' ? '#5C8FB0' : x ? (x.s.warna || x.k.warna) : '#999';
   var tags = '';
-  if (t.jenis === 'Transfer') tags += '<span class="tl-tag" style="--c:#5C8FB0">' + (T[t.target] ? '🐷 ' + h(T[t.target].nama) : '⇄ Transfer') + '</span>';
+  if (t.jenis === 'Transfer') tags += '<span class="tl-tag" style="--c:#5C8FB0">' + (T[t.target] ? '🪙 Nabung' : '⇄ Transfer') + '</span>';
   else if (x) tags += '<span class="tl-tag" style="--c:' + h(warna) + '">' + h(x.k.nama) + '</span>';
   if (TK[t.toko]) tags += '<span class="tl-tag" style="--c:#8A7F72">' + h(TK[t.toko].nama) + '</span>';
   var siapa = t.oleh && A[t.oleh] && (t.oleh !== S.me || A[a].bersama) ? '<span class="tl-who" style="background:' + h(A[t.oleh].warna || '#999') + '">' + h(A[t.oleh].nama.charAt(0)) + '</span>' : '';
@@ -1535,7 +1536,7 @@ function heroHome(a, total, tab, masuk, keluar){
     '<button class="more" data-act="katalog">+ Tambah Dompet</button></div>' +
     '<div class="h-mini"><div><span class="ar" style="background:#2E8C85;color:#fff">💵</span><span><small>Bebas dipakai</small><b class="num">' + uang(total - tab) + '</b></span></div>' +
     (utang < 0 ? '<div><span class="ar" style="background:#8C2F45;color:#fff">💳</span><span><small>Tagihan kredit</small><b class="num">' + uang(-utang) + '</b></span></div>'
-               : '<div><span class="ar" style="background:#2C3E6B;color:#fff">🐷</span><span><small>Di tabungan</small><b class="num">' + uang(tab) + '</b></span></div>') + '</div></div>';
+               : '<div><span class="ar" style="background:#2C3E6B;color:#fff">' + SVG.piggy + '</span><span><small>Di tabungan</small><b class="num">' + uang(tab) + '</b></span></div>') + '</div></div>';
   html += '<div class="pager" id="pager">' + p1 + p2 + '</div><div class="dots"><i class="' + (pg === 0 ? 'on' : '') + '"></i><i class="' + (pg === 1 ? 'on' : '') + '"></i></div></div>';
   return html;
 }
