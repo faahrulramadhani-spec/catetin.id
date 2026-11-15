@@ -172,6 +172,13 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .dp-sh{display:flex;align-items:center;gap:10px;margin-bottom:4px}.dp-sh b{flex:1;font-size:14.5px}.dp-sh span{font-weight:800}
 .dp-r{display:flex;gap:10px;width:100%;text-align:left;padding:6px 0 6px 40px;font-size:13.5px;align-items:baseline}
 .dp-dt{color:var(--muted);font-size:12px;font-weight:700;min-width:44px}.dp-c{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dp-r .num{font-weight:700}
+.ag-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:4px}
+.ag-t{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:var(--soft);border-radius:18px;padding:12px;text-align:left;min-width:0}
+.ag-ring{--p:0;width:50px;height:50px;border-radius:50%;background:conic-gradient(var(--w) calc(var(--p)*1%),color-mix(in srgb,var(--c) 18%,#fff) 0);display:grid;place-items:center;margin-bottom:4px}
+.ag-ring .ic{box-shadow:0 0 0 3px var(--soft)}
+.ag-n{font-weight:700;font-size:13.5px;line-height:1.25;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ag-t b{font-size:15px;font-weight:800}.ag-t b small{font-size:12px;color:var(--muted);font-weight:600}
+.ag-s{font-size:11.5px;color:var(--muted);font-weight:600}.ag-s.out{color:var(--tomat)}
 .perbar{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:var(--card);border-radius:18px;padding:12px 16px;margin:-4px 0 12px;box-shadow:var(--sh)}
 .perbar small{display:block;color:var(--muted);font-size:12px;font-weight:600}.perbar b{font-size:16px}.perbar .r{text-align:right;font-weight:700;font-size:14px}
 .bar.thin{height:5px;margin-top:5px}
@@ -2150,14 +2157,30 @@ function angKatRow(k, m, buka){
   }
   return html;
 }
+function modeAng(){ return ((S.ui && S.ui.tampil) || {}).ang || 'daftar'; }
+function tombolModeAng(){ var m = modeAng(); return '<button class="vt" data-act="tampil-mode" data-id="ang" aria-label="Ganti tampilan">' + (m === 'kotak' ? '☰' : '▦') + '</button>'; }
+function angGrid(ks, m){
+  return '<div class="ag-grid">' + ks.map(function(k){
+    var bt = batasKantong(k), pk = pakaiKantong(k, m), p = bt ? Math.round(pk / bt * 100) : 0, sisa = bt - pk, wr = p >= 100 ? 'var(--tomat)' : p >= 80 ? '#E5A93B' : 'var(--teal)';
+    return '<button class="ag-t" data-act="ang-detail" data-id="' + h(k.id) + '" style="--c:' + h(k.warna || '#999') + '">' +
+      '<span class="ag-ring" style="--p:' + Math.min(100, p) + ';--w:' + wr + '">' + ico(k, 34) + '</span>' +
+      '<span class="ag-n">' + h(k.nama) + '</span><b class="num">' + singkat(pk) + ' <small>/ ' + singkat(bt) + '</small></b>' +
+      '<span class="ag-s ' + (sisa < 0 ? 'out' : '') + '">' + (sisa >= 0 ? (sisa > 0 && !tanpaHarian(k) && periodeKini(m) ? '±' + singkat(amanHari(sisa, m)) + '/hari' : 'sisa ' + singkat(sisa)) : '⚠️ lewat ' + singkat(-sisa)) + '</span></button>';
+  }).join('') + '</div>';
+}
+function bukaAngDetail(kid){
+  var k = K[kid]; if (!k) return; var m = periodeAng(k.akun);
+  S.angBuka = S.angBuka || {}; S.angBuka[kid] = true;
+  bukaSheet(head(k.nama, 'Anggaran · ' + m.label) + '<div class="card">' + angKatRow(k, m, true) + '</div>');
+}
 function kartuAnggaran(a){
   var m = periodeAng(a), ks = kantongBeranggaran(a), S2 = S.angBuka || (S.angBuka = {});
   ks.sort(function(x, y){ return pakaiKantong(y, m) / batasKantong(y) - pakaiKantong(x, m) / batasKantong(x); });
-  var html = '<div class="card"><div class="h2r"><h3>Anggaran <small class="hint" style="font-weight:600">' + h(m.label) + '</small></h3><button class="lnk2" data-act="nav" data-v="anggaran">Semua ›</button></div>';
+  var html = '<div class="card"><div class="h2r"><h3>Anggaran <small class="hint" style="font-weight:600">' + h(m.label) + '</small></h3><span class="secr">' + (ks.length ? tombolModeAng() : '') + '<button class="lnk2" data-act="nav" data-v="anggaran">Semua ›</button></span></div>';
   if (ks.length) {
     var tb = ks.reduce(function(x, k){ return x + batasKantong(k); }, 0), tp = ks.reduce(function(x, k){ return x + pakaiKantong(k, m); }, 0);
     html += '<div class="tot">Terpakai <b class="num">' + uang(tp) + '</b> dari <b class="num">' + uang(tb) + '</b> · ' + Math.round(tp / tb * 100) + '%</div>';
-    html += ks.map(function(k){ return angKatRow(k, m, S2[k.id]); }).join('');
+    html += modeAng() === 'kotak' ? angGrid(ks, m) : ks.map(function(k){ return angKatRow(k, m, S2[k.id]); }).join('');
   }
   if (!ks.length) html += '<div class="empty">Belum ada anggaran.<br><button class="lnk2" data-act="nav" data-v="anggaran">+ Atur jatah bulanan</button></div>';
   return html + '</div>';
@@ -2171,7 +2194,8 @@ function viewAnggaran(){
   html += '<button class="perbar" data-act="ang-siklus"><span><small>Periode anggaran</small><b>' + h(m.label) + '</b></span><span class="r">sisa ' + sisaHari(m) + ' hari<br><small>' + (hariMulai(a) === 1 ? 'mulai tiap tgl 1' : 'reset tiap tgl ' + hariMulai(a)) + ' ›</small></span></button>';
   var pl = periodeAng(a, geserTgl(m.mulai, -1)), pls = ada.reduce(function(x, k){ return x + pakaiKantong(k, pl); }, 0);
   if (ada.length && S.tx.some(function(t){ return t.akun === a && t.tanggal < m.mulai; })) html += '<div class="hint" style="margin:-4px 4px 12px">Periode lalu (' + h(pl.label) + '): terpakai ' + rp(pls) + ' dari ' + rp(tb) + (tb >= pls ? ' · <b style="color:var(--teal)">hemat ' + rp(tb - pls) + '</b> 👏' : ' · <b style="color:var(--tomat)">lewat ' + rp(pls - tb) + '</b>') + '</div>';
-  if (ada.length) html += '<div class="card"><div class="tot">Terpakai <b class="num">' + rp(tp) + '</b> dari <b class="num">' + rp(tb) + '</b>' + (tb > tp ? ' · sisa <b class="num">' + rp(tb - tp) + '</b>' : '') + '</div>' + ada.map(function(k){ return angKatRow(k, m, (S.angBuka || {})[k.id]); }).join('') + '</div>';
+  if (ada.length) html += '<div class="sec"><h3>Sudah diatur</h3><span class="secr">' + tombolModeAng() + '</span></div><div class="card"><div class="tot">Terpakai <b class="num">' + rp(tp) + '</b> dari <b class="num">' + rp(tb) + '</b>' + (tb > tp ? ' · sisa <b class="num">' + rp(tb - tp) + '</b>' : '') + '</div>' +
+    (modeAng() === 'kotak' ? angGrid(ada, m) : ada.map(function(k){ return angKatRow(k, m, (S.angBuka || {})[k.id]); }).join('')) + '</div>';
   if (belum.length) html += '<div class="sec"><h3>Belum diatur</h3></div><div class="card">' + belum.map(function(k){
     return '<button class="row" data-act="atur-ang-kat" data-id="' + h(k.id) + '">' + ico(k, 36) + '<div class="mid"><div class="t">' + h(k.nama) + '</div><div class="s">Periode ini ' + rp(pakaiKantong(k, m)) + '</div></div><span class="lnk2">Atur ›</span></button>';
   }).join('') + '</div>';
@@ -3350,7 +3374,8 @@ document.addEventListener('click', function(e){
     case 'tampilan': bukaTampilan(); break;
     case 'hero-pg': { var pgEl = $('pager'); S.heroPage = +v; store('kk_hpg', v); if (pgEl) pgEl.scrollTo({left: +v * pgEl.clientWidth, behavior:'smooth'}); [].forEach.call(document.querySelectorAll('.htabs button'), function(b2, i){ b2.classList.toggle('on', i === +v); }); [].forEach.call(document.querySelectorAll('.hero .dots i'), function(b2, i){ b2.classList.toggle('on', i === +v); }); break; }
     case 'semua-dompet': bukaSemuaDompet(); break;
-    case 'tampil-mode': { S.ui.tampil = S.ui.tampil || {}; S.ui.tampil[id] = S.ui.tampil[id] === 'daftar' ? 'kotak' : 'daftar'; simpanUI(); render(); break; }
+    case 'tampil-mode': { S.ui.tampil = S.ui.tampil || {}; var cur = S.ui.tampil[id] || (id === 'ang' ? 'daftar' : 'kotak'); S.ui.tampil[id] = cur === 'daftar' ? 'kotak' : 'daftar'; simpanUI(); render(); break; }
+    case 'ang-detail': bukaAngDetail(id); break;
     case 'ui-font': S.ui.font = v; simpanUI(); terapkanUI(); bukaTampilan(); break;
     case 'ui-tema': S.ui.tema = v; simpanUI(); terapkanUI(); bukaTampilan(); break;
     case 'ui-rapat': S.ui.rapat = v; simpanUI(); terapkanUI(); bukaTampilan(); render(); break;
