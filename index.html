@@ -179,6 +179,27 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .ag-n{font-weight:700;font-size:13.5px;line-height:1.25;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ag-t b{font-size:15px;font-weight:800}.ag-t b small{font-size:12px;color:var(--muted);font-weight:600}
 .ag-s{font-size:11.5px;color:var(--muted);font-weight:600}.ag-s.out{color:var(--tomat)}
+.ct-seg{margin:0 0 12px}
+.kal{padding:14px 12px}
+.kal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:6px}
+.kal-h{text-align:center;font-size:12px;font-weight:700;color:var(--muted);padding-bottom:2px}
+.kal-c{position:relative;aspect-ratio:1/1.05;border-radius:11px;display:flex;flex-direction:column;justify-content:space-between;padding:4px 5px;text-align:left;background:var(--soft);min-width:0;overflow:hidden}
+.kal-c .kd{font-size:11.5px;font-weight:700;opacity:.85}
+.kal-c b{font-size:11px;font-weight:800;text-align:right;white-space:nowrap;letter-spacing:-.02em}
+.kal-c.l1{background:color-mix(in srgb,var(--acc) 14%,#fff)}.kal-c.l2{background:color-mix(in srgb,var(--acc) 30%,#fff)}
+.kal-c.l3{background:color-mix(in srgb,var(--acc) 52%,#fff)}.kal-c.l4{background:color-mix(in srgb,var(--acc) 75%,#fff);color:#fff}
+.kal-c.l5{background:color-mix(in srgb,var(--acc) 92%,#000);color:#fff}
+.kal-c.fut{background:transparent;border:1.5px dashed var(--line);color:var(--muted)}
+.kal-c.today{box-shadow:inset 0 0 0 2.5px var(--ink)}
+.kal-c.sel{box-shadow:inset 0 0 0 2.5px var(--ink),0 4px 10px rgba(0,0,0,.18);transform:scale(1.04)}
+.kal-f{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:12px 2px 0}
+.kal-f b{color:var(--ink)}
+.kal-leg{display:flex;align-items:center;gap:3px}.kal-leg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.kal-leg .l1{background:color-mix(in srgb,var(--acc) 14%,#fff)}.kal-leg .l2{background:color-mix(in srgb,var(--acc) 30%,#fff)}.kal-leg .l3{background:color-mix(in srgb,var(--acc) 52%,#fff)}.kal-leg .l4{background:color-mix(in srgb,var(--acc) 75%,#fff)}.kal-leg .l5{background:color-mix(in srgb,var(--acc) 92%,#000)}
+.kal-st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.kal-st>div{background:var(--soft);border-radius:14px;padding:8px 10px}.kal-st small{display:block;font-size:11px;color:var(--muted);font-weight:600}.kal-st b{font-size:15px}
+.kal-warn{display:block;width:100%;text-align:left;margin-top:10px;background:#FBE3DD;color:#8C2F2F;border-radius:14px;padding:10px 12px;font-size:13px;font-weight:600}.kal-warn b{float:right}
+.kal-dh{display:flex;justify-content:space-between;align-items:center;margin:16px 4px 8px;font-size:16px}.kal-dh span{font-weight:800;font-size:14px}
 .perbar{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:var(--card);border-radius:18px;padding:12px 16px;margin:-4px 0 12px;box-shadow:var(--sh)}
 .perbar small{display:block;color:var(--muted);font-size:12px;font-weight:600}.perbar b{font-size:16px}.perbar .r{text-align:right;font-weight:700;font-size:14px}
 .bar.thin{height:5px;margin-top:5px}
@@ -1310,6 +1331,43 @@ function txKartu(t){
     (cat && norm(cat) !== norm(judul) ? '<small class="tl-cat">“' + h(cat.length > 60 ? cat.slice(0, 58) + '…' : cat) + '”</small>' : '') + '</span>' +
     '<span class="tl-r"><b class="num ' + (ar > 0 ? 'in' : ar < 0 ? 'out' : '') + '">' + (ar > 0 ? '+' : ar < 0 ? '−' : '') + rp(t.jumlah) + '</b><small>' + h(dp) + '</small></span></button>';
 }
+function viewKalender(a){
+  var P = periodeAng(a, S.month + '-01'), t0 = today(), set = hariCatat(a);
+  var per = {}, nTx = {};
+  S.tx.forEach(function(t){ if (!terkait(t, a) || !diPeriode(t, P)) return; nTx[t.tanggal] = (nTx[t.tanggal] || 0) + 1; if (arahTx(t, a) < 0 && t.jenis === 'Pengeluaran') per[t.tanggal] = (per[t.tanggal] || 0) + t.jumlah; });
+  var vals = Object.keys(per).map(function(k){ return per[k]; }).sort(function(x, y){ return x - y; });
+  var lvl = function(v){ if (!v) return 0; if (vals.length < 2) return 3; var r = vals.indexOf(v) / (vals.length - 1); return r < .2 ? 1 : r < .45 ? 2 : r < .7 ? 3 : r < .9 ? 4 : 5; };
+  var dmulai = tglObj(P.mulai), lead = (dmulai.getDay() + 6) % 7, html = '<div class="card kal">';
+  html += '<div class="h2r"><h3>Kalender belanja</h3><small class="hint">' + h(P.label) + '</small></div>';
+  html += '<div class="kal-g">' + ['S','S','R','K','J','S','M'].map(function(x){ return '<span class="kal-h">' + x + '</span>'; }).join('');
+  for (var i = 0; i < lead; i++) html += '<span></span>';
+  var d = P.mulai, pilih = S.kalPilih && diPeriode({tanggal:S.kalPilih}, P) ? S.kalPilih : '';
+  while (d <= P.akhir) {
+    var v = per[d] || 0, L = lvl(v), fut = d > t0, cls = 'kal-c l' + L + (fut ? ' fut' : '') + (d === t0 ? ' today' : '') + (d === pilih ? ' sel' : '');
+    html += '<button class="' + cls + '" data-act="kal-pilih" data-v="' + d + '"><span class="kd">' + (+d.slice(8, 10)) + '</span>' +
+      (v ? '<b class="num">' + singkat(v).replace('Rp', '') + '</b>' : (!fut && set[d] === 2 ? '<b>🔥</b>' : (!fut && nTx[d] ? '<b class="num">0</b>' : ''))) + '</button>';
+    d = geserTgl(d, 1);
+  }
+  html += '</div>';
+  // ringkasan
+  var lewatHari = 0, kosong = 0, tot = 0, maxD = '', maxV = 0, dd = P.mulai, akhirHit = t0 < P.akhir ? t0 : P.akhir;
+  while (dd <= akhirHit) { lewatHari++; var vv = per[dd] || 0; tot += vv; if (!vv) kosong++; if (vv > maxV) { maxV = vv; maxD = dd; } dd = geserTgl(dd, 1); }
+  html += '<div class="kal-f"><span>' + (maxD ? 'Paling boros: <b>' + HARI[tglObj(maxD).getDay()].slice(0, 3) + ' ' + tglPendek(maxD) + ' · ' + singkat(maxV) + '</b>' : 'Belum ada belanja') + '</span>' +
+    '<span class="kal-leg">sedikit <i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><i class="l5"></i> banyak</span></div>';
+  html += '<div class="kal-st"><div><small>Total belanja</small><b class="num out">' + singkat(tot) + '</b></div><div><small>Rata-rata/hari</small><b class="num">' + singkat(lewatHari ? Math.round(tot / lewatHari) : 0) + '</b></div><div><small>Tanpa belanja</small><b class="num">' + kosong + ' <small style="display:inline">/ ' + lewatHari + ' hari</small></b></div></div>';
+  var lw = A[a].bersama ? [] : kantongBeranggaran(a).filter(function(k){ return pakaiKantong(k, periodeAng(a)) > batasKantong(k); });
+  if (lw.length) html += '<button class="kal-warn" data-act="nav" data-v="anggaran">⚠️ ' + lw.length + ' kategori lewat batas: ' + h(lw.map(function(k){ return k.nama; }).slice(0, 2).join(', ')) + (lw.length > 2 ? '…' : '') + ' <b>Anggaran ›</b></button>';
+  html += '</div>';
+  // detail tanggal
+  if (pilih) {
+    var xs = urut(S.tx.filter(function(t){ return terkait(t, a) && t.tanggal === pilih; })), net = 0; xs.forEach(function(t){ net += arahTx(t, a) * t.jumlah; });
+    var od = tglObj(pilih);
+    html += '<div class="kal-dh"><b>' + HARI[od.getDay()] + ', ' + od.getDate() + ' ' + BULAN[od.getMonth()] + '</b>' + (net ? '<span class="num ' + (net > 0 ? 'in' : 'out') + '">' + (net > 0 ? '↑ ' : '↓ ') + rp(Math.abs(net)) + '</span>' : '') + '</div>';
+    html += xs.length ? xs.map(txKartu).join('') : '<div class="card"><div class="empty">' + (pilih > t0 ? 'Tanggal ini belum tiba.' : set[pilih] === 2 ? 'Ditandai tidak belanja 🔥' : 'Tidak ada catatan di tanggal ini.') + '</div></div>';
+    if (pilih <= t0) html += '<button class="btn" data-act="kal-catat" data-v="' + pilih + '">+ Catat untuk ' + od.getDate() + ' ' + BLN[od.getMonth()] + '</button>';
+  } else html += '<div class="hint" style="text-align:center;margin:4px 0 12px">Ketuk tanggal untuk melihat catatannya atau mencatat di tanggal itu.</div>';
+  return html;
+}
 function txRow(t){
   var a = S.akun;
   var masuk = t.jenis === 'Pemasukan' || (t.jenis === 'Transfer' && D[t.tujuan] && D[t.tujuan].akun === a && !(D[t.dompet] && D[t.dompet].akun === a));
@@ -1982,7 +2040,10 @@ function viewRiwayat(){
     if (f === 'transfer') return t.jenis === 'Transfer';
     return true;
   }));
-  var html = pageHead('Catetan') + '<div class="wrap">' + monthNav() + (A[a].bersama ? '' : kartuTalangan()) + '<div class="pills">' + [['semua','Semua'],['keluar','Pengeluaran'],['masuk','Pemasukan'],['transfer','Transfer']].map(function(x){
+  var mode = S.ctMode || 'tl';
+  var seg = '<div class="seg ct-seg"><button class="' + (mode === 'tl' ? 'on' : '') + '" data-act="ct-mode" data-v="tl">☰ Linimasa</button><button class="' + (mode === 'kal' ? 'on' : '') + '" data-act="ct-mode" data-v="kal">▦ Kalender</button></div>';
+  if (mode === 'kal') return pageHead('Catetan') + '<div class="wrap">' + monthNav() + seg + viewKalender(a) + '</div>';
+  var html = pageHead('Catetan') + '<div class="wrap">' + monthNav() + seg + (A[a].bersama ? '' : kartuTalangan()) + '<div class="pills">' + [['semua','Semua'],['keluar','Pengeluaran'],['masuk','Pemasukan'],['transfer','Transfer']].map(function(x){
     return '<button class="' + (f === x[0] ? 'on' : '') + '" data-act="filter" data-v="' + x[0] + '">' + x[1] + '</button>';
   }).join('') + '</div>';
   if (!list.length) return html + '<div class="card"><div class="empty">Tidak ada catatan di bulan ini.</div></div></div>';
@@ -3432,6 +3493,9 @@ document.addEventListener('click', function(e){
     case 'sal-ok': el.disabled = true; sesuaikanSaldo(id, Number(v)).then(function(t){ bot(t ? '✓ Saldo <b>' + h(D[id].nama) + '</b> sekarang ' + rp(Number(v)) + '.' : 'Sudah pas, tidak ada yang diubah.'); }); break;
     case 'sal-awal': el.disabled = true; koreksiAwal(id, Number(v)).then(function(ok){ bot(ok ? '✓ Saldo awal <b>' + h(D[id].nama) + '</b> dikoreksi. Saldo sekarang ' + rp(Number(v)) + ', tanpa transaksi tambahan.' : 'Sudah pas, tidak ada yang diubah.'); }); break;
     case 'sal-batal': bot('Oke, saldo tidak diubah.'); break;
+    case 'ct-mode': S.ctMode = v; render(); break;
+    case 'kal-pilih': S.kalPilih = S.kalPilih === v ? '' : v; render(); if (S.kalPilih) setTimeout(function(){ var e = document.querySelector('.kal-dh'); if (e) e.scrollIntoView({behavior:'smooth', block:'start'}); }, 60); break;
+    case 'kal-catat': bukaTambah({akun:S.akun, tanggal:v}); break;
     case 'tg-tab': S.tgTab = v; render(); break;
     case 'tagihan-kelola': kelolaTagihan(); break;
     case 'tagihan-baru': formTagihan(); break;
