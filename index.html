@@ -2224,13 +2224,25 @@ function migrasiSub(){
   return true;
 }
 function migrasiHewan(){
-  if (!S.cfg || S.cfg.mig3) return false;
+  if (!S.cfg) return false;
+  var ubah = false;
   S.cfg.akun.forEach(function(a){
     if (a.bersama) return;
     var ks = S.cfg.kantong.filter(function(k){ return k.akun === a.id && k.tipe === 'keluar'; });
-    if (ks.some(function(k){ return /hewan/i.test(k.nama); })) return;
-    var rt = ks.filter(function(k){ return k.nama === 'Rumah Tangga'; })[0], lama = null;
-    if (rt) { lama = (rt.sub || []).filter(function(sb){ return /hewan/i.test(sb.nama); })[0]; if (lama) rt.sub = rt.sub.filter(function(sb){ return sb !== lama; }); }
+    var hk = ks.filter(function(k){ return /hewan/i.test(k.nama); })[0];
+    var lama = null, asal = null;
+    ks.forEach(function(k){ if (k === hk || lama) return; var x = (k.sub || []).filter(function(sb){ return /hewan|peliharaan/i.test(sb.nama); })[0]; if (x) { lama = x; asal = k; } });
+    if (hk && !lama) return;
+    if (hk && lama) {
+      asal.sub = asal.sub.filter(function(sb){ return sb !== lama; });
+      var ada = (hk.sub || []).some(function(sb){ return /makanan/i.test(sb.nama); });
+      if (!ada) lama.nama = 'Makanan & Snack';
+      lama.icon = 'paw'; hk.sub.unshift(lama); ubah = true; return;
+    }
+    if (S.cfg.mig3 && !lama) return;
+    var rt = asal || ks.filter(function(k){ return k.nama === 'Rumah Tangga'; })[0];
+    if (lama) asal.sub = asal.sub.filter(function(sb){ return sb !== lama; });
+    ubah = true;
     var makan = lama || {id:uid('s')};
     Object.assign(makan, {nama:'Makanan & Snack', icon:'paw', kata:['wetfood','wet food','dryfood','dry food','makanan kucing','makanan anjing','whiskas','me-o','meo','royal canin','snack kucing','kucing','anjing']});
     var baru = {id:uid('k'), akun:a.id, nama:'Hewan Peliharaan', tipe:'keluar', icon:'paw', warna:'#C98A4B', sub:[
@@ -2242,8 +2254,8 @@ function migrasiHewan(){
     var pos = rt ? S.cfg.kantong.indexOf(rt) + 1 : S.cfg.kantong.length;
     S.cfg.kantong.splice(pos, 0, baru);
   });
-  S.cfg.mig3 = true; indeks(); rapikanTx();
-  return true;
+  var pertama = !S.cfg.mig3; S.cfg.mig3 = true; indeks(); rapikanTx();
+  return ubah || pertama;
 }
 function rapikanTx(){ (S.tx || []).forEach(function(t){ if (t.sub && SB[t.sub] && t.kantong !== SB[t.sub].k.id) t.kantong = SB[t.sub].k.id; }); }
 function migrasiAng(){
@@ -2705,15 +2717,19 @@ function editKantong(id){
 }
 function editSub(kid, id){
   var k = K[kid], s0 = id ? SB[id] && SB[id].s : null;
-  bukaForm({title: (s0 ? 'Ubah' : 'Tambah') + ' sub · ' + k.nama, data: s0 ? Object.assign({warna:k.warna}, s0) : {icon:k.icon, warna:k.warna}, preview:{warna:k.warna},
+  var pindahOpts = kantongAkun(k.akun, k.tipe).map(function(x){ return [x.id, x.id === k.id ? x.nama + ' (sekarang)' : x.nama]; });
+  bukaForm({title: (s0 ? 'Ubah' : 'Tambah') + ' sub · ' + k.nama, data: s0 ? Object.assign({warna:k.warna, pindah:k.id}, s0) : {icon:k.icon, warna:k.warna, pindah:k.id}, preview:{warna:k.warna},
     fields:[{k:'nama', label:'Nama sub-kategori', max:30, ph:'cth: Bensin'}, {k:'icon', label:'Ikon', type:'iconpick'},
+      {k:'pindah', label:'Masuk ke kategori', type:'select', opts:pindahOpts, hint:'Ganti untuk memindahkan sub ini (beserta catatan lamanya) ke kategori lain.'},
       {k:'warna', label:'Warna (bawaan ikut kategori)', type:'color'},
       {k:'kata', label:'Kata kunci chat', type:'kata', hint:'cth: bensin, pertalite, isi bensin'}, {k:'ikon', label:'Atau pakai foto sendiri', type:'ikon'}],
     onSave:function(d){
       if (!wajib(d, 'nama', 'Nama')) return;
       if (d.warna === k.warna) d.warna = '';
-      if (s0) Object.assign(s0, d); else (k.sub = k.sub || []).push(Object.assign({id:uid('s')}, d));
-      simpanCfg(); indeks(); kelolaKantong(kid); render();
+      var ke = K[d.pindah] || k; delete d.pindah;
+      if (s0) Object.assign(s0, d); else { s0 = Object.assign({id:uid('s')}, d); (k.sub = k.sub || []).push(s0); }
+      if (ke !== k) { k.sub = k.sub.filter(function(x){ return x !== s0; }); (ke.sub = ke.sub || []).push(s0); }
+      simpanCfg(); indeks(); rapikanTx(); kelolaKantong(ke.id); render(); if (ke !== k) toast(s0.nama + ' dipindah ke ' + ke.nama);
     },
     onDelete: s0 ? function(){
       k.sub = k.sub.filter(function(x){ return x.id !== id; });
