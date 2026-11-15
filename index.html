@@ -157,6 +157,7 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 5
 .tl-cat{font-size:12px;color:var(--muted);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tl-r{text-align:right;flex:none;max-width:42%;display:flex;flex-direction:column;gap:3px}.tl-r b{font-size:15px;font-weight:800}
 .tl-r small{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sal-now{background:var(--soft);border-radius:16px;padding:12px 14px;margin:-4px 0 4px}.sal-now small{display:block;color:var(--muted);font-size:12px;font-weight:600}.sal-now b{font-size:22px}
 .perbar{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:var(--card);border-radius:18px;padding:12px 16px;margin:-4px 0 12px;box-shadow:var(--sh)}
 .perbar small{display:block;color:var(--muted);font-size:12px;font-weight:600}.perbar b{font-size:16px}.perbar .r{text-align:right;font-weight:700;font-size:14px}
 .bar.thin{height:5px;margin-top:5px}
@@ -2277,7 +2278,7 @@ function migrasiAng(){
    ========================================================= */
 function sapa(){
   var n = A[S.me] ? A[S.me].nama : '';
-  S.chat = [{from:'bot', html:'Halo ' + h(n) + '! Ketik saja catatanmu seperti chat biasa. Nanti kucek dulu, kamu tinggal ketuk Simpan.<br><br>Contoh:<br>• <b>beli bensin 20rb pake tunai</b><br>• <b>makan siang 25rb jago</b><br>• <b>belanja indomaret 45rb bri</b><br>• <b>gajian 5jt masuk bri</b><br>• <b>nabung 500rb ke rumah dari bri</b><br><br>Bisa sekaligus banyak, pisahkan dengan koma atau baris baru:<br>• <b>kemarin beli wetfood 45rb pake jago, bensin 20rb tunai</b><br>Tanggal bisa: <b>kemarin</b>, <b>2 hari lalu</b>, <b>tgl 10</b>.'}];
+  S.chat = [{from:'bot', html:'Halo ' + h(n) + '! Ketik saja catatanmu seperti chat biasa. Nanti kucek dulu, kamu tinggal ketuk Simpan.<br><br>Contoh:<br>• <b>beli bensin 20rb pake tunai</b><br>• <b>makan siang 25rb jago</b><br>• <b>belanja indomaret 45rb bri</b><br>• <b>gajian 5jt masuk bri</b><br>• <b>nabung 500rb ke rumah dari bri</b><br><br>Bisa sekaligus banyak, pisahkan dengan koma atau baris baru:<br>• <b>kemarin beli wetfood 45rb pake jago, bensin 20rb tunai</b><br>Tanggal bisa: <b>kemarin</b>, <b>2 hari lalu</b>, <b>tgl 10</b>.<br><br>Saldo nggak cocok? Ketik <b>saldo jago 2.150.000</b>.'}];
 }
 function renderChat(){
   var a = A[S.akun];
@@ -2295,6 +2296,14 @@ function kirimChat(text){
   var p = S.pending;
   if (p && p.need === 'jumlah' && bacaNominal(text) && pecahPesan(text).length < 2 && text.length < 20) { p.jumlah = bacaNominal(text); lanjut(); return; }
   S.pending = null;
+  if (/^(saldo|sesuaikan saldo|sesuaikan)\s/i.test(text) && bacaNominal(text)) {
+    var ps = parse(text.replace(/^(sesuaikan saldo|sesuaikan|saldo)\s/i, 'beli '), S.akun);
+    if (ps.dompet && D[ps.dompet]) { var nyata = bacaNominal(text), dd = D[ps.dompet], kini = saldoMap()[dd.id] || 0;
+      if (nyata === kini) { bot('Saldo <b>' + h(dd.nama) + '</b> sudah pas ' + rp(kini) + ' 👌'); return; }
+      bot('Saldo <b>' + h(dd.nama) + '</b> di catetin ' + rp(kini) + ', sebenarnya ' + rp(nyata) + '. Selisih <b>' + (nyata > kini ? '+' : '−') + rp(Math.abs(nyata - kini)) + '</b>.<div class="chips"><button class="chip" data-act="sal-ok" data-id="' + h(dd.id) + '" data-v="' + nyata + '">✓ Sesuaikan</button><button class="chip plain" data-act="sal-batal">Batal</button></div>');
+      return; }
+    bot('Dompet mana yang mau disesuaikan? Contoh: <b>saldo jago 2.150.000</b>'); return;
+  }
   mulaiAntri(text);
 }
 function lanjut(){
@@ -2532,11 +2541,39 @@ function bukaKantongDetail(kid){
   });
   bukaSheet(html + '</div>');
 }
+/* ---------- penyesuaian saldo ---------- */
+function subPenyesuaian(akun, tipe){
+  var ks = kantongAkun(akun, tipe), x = null;
+  ks.forEach(function(k){ (k.sub || []).forEach(function(sb){ if (!x && /penyesuaian/i.test(sb.nama)) x = sb; }); });
+  if (x) return x.id;
+  var k = ks.filter(function(k){ return /lain/i.test(k.nama); })[0] || ks[ks.length - 1]; if (!k) return '';
+  var sb = {id:uid('s'), nama:'Penyesuaian Saldo', icon:'scale', kata:[]}; (k.sub = k.sub || []).push(sb); indeks(); simpanCfg(true);
+  return sb.id;
+}
+function sesuaikanSaldo(did, nyata, ket){
+  var d = D[did], kini = saldoMap()[did] || 0, sel = nyata - kini;
+  if (!sel) { toast('Saldo ' + d.nama + ' sudah pas ' + rp(nyata) + ' 👌'); return Promise.resolve(null); }
+  var jenis = sel > 0 ? 'Pemasukan' : 'Pengeluaran', sid = subPenyesuaian(d.akun, sel > 0 ? 'masuk' : 'keluar');
+  if (!sid) { toast('Belum ada kategori untuk penyesuaian'); return Promise.resolve(null); }
+  var t = {akun:d.akun, tanggal:today(), jenis:jenis, jumlah:Math.abs(sel), kantong:SB[sid].k.id, sub:sid, dompet:did, tujuan:'', target:'', toko:'',
+    catatan:'Penyesuaian saldo ' + d.nama + (ket ? ' · ' + ket : '') + ' (' + rp(kini) + ' → ' + rp(nyata) + ')', oleh:S.me};
+  return simpanTx(t).then(function(){ toast('Saldo ' + d.nama + ' jadi ' + rp(nyata) + ' (' + (sel > 0 ? '+' : '−') + rp(Math.abs(sel)) + ')'); render(); return t; });
+}
+function formSesuaikan(did){
+  var d = D[did], kini = saldoMap()[did] || 0;
+  bukaForm({title:'Sesuaikan saldo ' + d.nama,
+    top:'<div class="sal-now"><small>Saldo di catetin sekarang</small><b class="num">' + rp(kini) + '</b></div><div class="hint" style="margin:6px 0 4px">Isi saldo yang benar sesuai aplikasi bank/e-wallet. Selisihnya dicatat otomatis sebagai <b>Penyesuaian Saldo</b>.</div>',
+    fields:[{k:'nyata', label:'Saldo sebenarnya', type:'money'}, {k:'ket', label:'Keterangan (opsional)', ph:'cth: biaya admin, lupa catat', max:60}],
+    data:{nyata:''},
+    onSave:function(x){ if (x.nyata === '' || x.nyata == null) return toast('Isi saldo sebenarnya'); tutup(); sesuaikanSaldo(did, Number(x.nyata) || 0, x.ket); }});
+  setTimeout(function(){ var i = $('f_nyata'); if (i) { i.value = kini > 0 ? kini.toLocaleString('id-ID') : ''; i.focus(); i.select && i.select(); } }, 80);
+}
 function bukaDompetDetail(did){
   var d = D[did], sal = saldoMap();
   var list = urut(S.tx.filter(function(t){ return t.dompet === did || t.tujuan === did; })).slice(0, 15);
   bukaSheet(head(d.nama, namaJenis(d.jenis)) + '<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">' + ico(d, 52) + '<div style="font-size:24px;font-weight:800" class="num">' + rp(sal[did] || 0) + '</div></div>' +
     '<div class="card">' + (list.length ? list.map(txRow).join('') : '<div class="empty">Belum ada aktivitas.</div>') + '</div>' +
+    '<button class="btn" data-act="sesuaikan" data-id="' + h(did) + '">⚖️ Sesuaikan saldo</button>' +
     '<button class="btn ghost" data-act="edit-dompet" data-id="' + h(did) + '">Ubah dompet</button>');
 }
 
@@ -3246,6 +3283,9 @@ document.addEventListener('click', function(e){
         .catch(function(e){ el.disabled = false; el.textContent = 'Batalkan'; toast(msg(e)); });
       break;
     case 'd-simpan': simpanDraft(id); break;
+    case 'sesuaikan': formSesuaikan(id); break;
+    case 'sal-ok': el.disabled = true; sesuaikanSaldo(id, Number(v)).then(function(t){ bot(t ? '✓ Saldo <b>' + h(D[id].nama) + '</b> sekarang ' + rp(Number(v)) + '.' : 'Sudah pas, tidak ada yang diubah.'); }); break;
+    case 'sal-batal': bot('Oke, saldo tidak diubah.'); break;
     case 'tg-tab': S.tgTab = v; render(); break;
     case 'tagihan-kelola': kelolaTagihan(); break;
     case 'tagihan-baru': formTagihan(); break;
