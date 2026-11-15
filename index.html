@@ -577,6 +577,14 @@ nav>button{position:relative}
 /* ---------- tema gelap ---------- */
 [data-tema=gelap]{--bg:#1C1820;--card:#27222C;--ink:#F3EDE4;--muted:#A99F93;--line:#3A333F;--soft:#342D3A;--sh:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25);color-scheme:dark}
 [data-tema=gelap] nav{background:var(--card);border-color:var(--line)}
+/* navigasi ikut warna akun */
+nav{background:color-mix(in srgb,var(--acc) 7%,#fff);border-top:1px solid color-mix(in srgb,var(--acc) 22%,transparent);box-shadow:0 -6px 18px color-mix(in srgb,var(--acc) 10%,transparent);padding-top:6px}
+nav>button{padding:2px 4px 3px;min-width:64px;transition:color .2s}
+nav>button svg{stroke:color-mix(in srgb,var(--acc) 45%,#8A7F72);box-sizing:content-box;padding:4px 14px;border-radius:999px;transition:background .25s,stroke .25s}
+nav>button.on{color:var(--acc);font-weight:800}
+nav>button.on svg{stroke:#fff;background:var(--acc);box-shadow:0 4px 10px color-mix(in srgb,var(--acc) 35%,transparent)}
+[data-tema=gelap] nav{background:color-mix(in srgb,var(--acc) 10%,var(--card))}
+[data-tema=gelap] nav>button.on{color:#fff}
 [data-tema=gelap] .ph{background:linear-gradient(180deg,var(--acc-t),var(--bg) 80%),var(--bg)}
 [data-tema=gelap] .chatbar{background:var(--bg);border-color:var(--line)}
 [data-tema=gelap] .fab{border-color:var(--card)}
@@ -1234,6 +1242,7 @@ function chrome(){
   var w = (S.view === 'berdua' || S.view === 'timeline') ? '#8C2F45' : warnaAkun();
   document.documentElement.style.setProperty('--acc', w);
   document.documentElement.style.setProperty('--acc-t', w + '2E');
+  var tm = document.querySelector('meta[name="theme-color"]'); if (tm && document.documentElement.getAttribute('data-tema') !== 'gelap') tm.setAttribute('content', w);
   ['home','riwayat','tugas','berdua','atur'].forEach(function(v){ $('n-' + v).classList.toggle('on', S.view === v || (v === 'home' && S.view === 'anggaran') || (v === 'atur' && S.view === 'laporan') || (v === 'berdua' && S.view === 'timeline')); });
   $('dial').classList.toggle('hidden', S.view === 'chat' || S.view === 'berdua' || S.view === 'timeline' || S.view === 'tugas'); tutupDial();
   $('n-berdua').classList.toggle('dot', (S.momen || []).some(momenBaru));
