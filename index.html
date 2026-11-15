@@ -624,11 +624,11 @@ nav>button{position:relative}
     </form>
   </div>
   <nav>
-    <button data-act="nav" data-v="home" id="n-home"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>Beranda</button>
-    <button data-act="nav" data-v="riwayat" id="n-riwayat"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Transaksi</button>
-    <button data-act="nav" data-v="tugas" id="n-tugas"><svg viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M8 9l1.6 1.6L12.5 7.7M8 15l1.6 1.6 2.9-2.9M14.5 9.5H17M14.5 15.5H17"/></svg>To-do</button>
-    <button data-act="nav" data-v="berdua" id="n-berdua"><svg viewBox="0 0 24 24"><path d="M12 20s-8-4.6-8-10.5A4.5 4.5 0 0 1 12 6.6a4.5 4.5 0 0 1 8 2.9C20 15.4 12 20 12 20z"/></svg>Berdua</button>
-    <button data-act="nav" data-v="atur" id="n-atur"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>Lainnya</button>
+    <button data-act="nav" data-v="home" id="n-home"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>Ringkasin</button>
+    <button data-act="nav" data-v="riwayat" id="n-riwayat"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Catetan</button>
+    <button data-act="nav" data-v="tugas" id="n-tugas"><svg viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M8 9l1.6 1.6L12.5 7.7M8 15l1.6 1.6 2.9-2.9M14.5 9.5H17M14.5 15.5H17"/></svg>Kerjain</button>
+    <button data-act="nav" data-v="berdua" id="n-berdua"><svg viewBox="0 0 24 24"><path d="M12 20s-8-4.6-8-10.5A4.5 4.5 0 0 1 12 6.6a4.5 4.5 0 0 1 8 2.9C20 15.4 12 20 12 20z"/></svg>Barengin</button>
+    <button data-act="nav" data-v="atur" id="n-atur"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>Aturin</button>
   </nav>
   <div class="dial-bg hidden" id="dial-bg" data-act="dial"></div>
   <div class="dial" id="dial">
@@ -1573,7 +1573,7 @@ function viewTugas(){
   };
   var beresHariIni = semua.filter(function(o){ return o.selesai && o.selesaiPada && tglStr(new Date(o.selesaiPada)) === t0; }).length;
   var tot = g.hari.length + beresHariIni;
-  var html = pageHead('To-do') + '<div class="wrap">';
+  var html = pageHead('Kerjain') + '<div class="wrap">';
   html += '<div class="tg-hero"><div><small>' + h(tglPanjang(t0)) + '</small><b>' + (g.hari.length ? g.hari.length + ' tugas hari ini' : (beresHariIni ? 'Semua beres! 🎉' : 'Hari ini kosong ✨')) + '</b></div>' +
     (tot ? '<div class="tg-ring" style="--p:' + Math.round(beresHariIni / tot * 100) + '"><span>' + beresHariIni + '/' + tot + '</span></div>' : '') + '</div>';
   html += '<form class="tg-add" data-form="tugas"><input id="tg-in" class="inp" autocomplete="off" placeholder="Tambah tugas… cth: beresin kamar besok !"><button class="btn" type="submit" aria-label="Tambah">＋</button></form>' +
@@ -1722,7 +1722,7 @@ function viewRiwayat(){
     if (f === 'transfer') return t.jenis === 'Transfer';
     return true;
   }));
-  var html = pageHead('Transaksi') + '<div class="wrap">' + monthNav() + '<div class="pills">' + [['semua','Semua'],['keluar','Pengeluaran'],['masuk','Pemasukan'],['transfer','Transfer']].map(function(x){
+  var html = pageHead('Catetan') + '<div class="wrap">' + monthNav() + '<div class="pills">' + [['semua','Semua'],['keluar','Pengeluaran'],['masuk','Pemasukan'],['transfer','Transfer']].map(function(x){
     return '<button class="' + (f === x[0] ? 'on' : '') + '" data-act="filter" data-v="' + x[0] + '">' + x[1] + '</button>';
   }).join('') + '</div>';
   if (!list.length) return html + '<div class="card"><div class="empty">Tidak ada catatan di bulan ini.</div></div></div>';
@@ -2312,7 +2312,7 @@ function renderKatalog(){
    ========================================================= */
 function viewAtur(){
   var a = S.akun, ak = A[a], sal = saldoMap(), me = A[S.me];
-  var html = pageHead('Lainnya') + '<div class="wrap">';
+  var html = pageHead('Aturin') + '<div class="wrap">';
   html += '<div class="card"><div class="row">' + ico({icon:'smile', warna:me.warna}, 48) + '<div class="mid"><div class="t">' + h(me.nama) + '</div><div class="s">Masuk sebagai ' + h(S.email) + '</div></div></div></div>';
 
   html += '<div class="sec"><h3>Anggaran</h3><button data-act="nav" data-v="anggaran">Buka ›</button></div>';
@@ -2661,7 +2661,7 @@ function agendaRow(a){
 function viewBerdua(){
   var b = S.cfg.berdua || {}, t = today(), nx = agendaAkanDatang(), lw = agendaLewat(), ms = momenUrut();
   var html = '<div class="bd-head"><div class="bd-top">' + switchBtn() + '<button class="h-btn dark" data-act="reload" aria-label="Muat ulang">' + SVG.reload + '</button></div>' +
-    '<h1 class="bd-t">Berdua</h1><div class="bd-s">Hubungan yang baik dibangun dari hal-hal kecil.</div>' +
+    '<h1 class="bd-t">Barengin</h1><div class="bd-s">Hubungan yang baik dibangun dari hal-hal kecil.</div>' +
     '<div class="bd-n">Selamat merayakan cinta, ' + h(namaBerdua()) + '</div>' +
     (b.sejak ? '<div class="bd-sejak">' + svgIc('heart', 14) + ' Bersama sejak ' + tglPendek(b.sejak) + ' ' + b.sejak.slice(0, 4) + ' · <b>' + Math.max(0, selisihHari(b.sejak, t)).toLocaleString('id-ID') + ' hari</b></div>' : '') + '</div>';
 
