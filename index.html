@@ -687,6 +687,14 @@ nav>button.on svg{stroke:#fff;background:var(--acc);box-shadow:0 4px 10px color-
 [data-rapat=ringkas] .kgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .cards{display:flex;gap:10px;overflow-x:auto;margin:12px -18px 0;padding:0 18px 4px;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;scroll-padding:0 18px}
 .cards::-webkit-scrollbar{display:none}
+.jt{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.jt:first-of-type{border-top:0}
+.jt-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.jt-m>b{font-size:14px}
+.jt-v{text-align:right;flex:none}
+.jt-v b{display:block;font-size:13.5px}
+.jt-v small{font-size:11.5px;color:var(--muted)}
+.jt-v small.out{color:var(--tomat)}
 .kc{flex:none;width:150px;height:114px;border-radius:14px;padding:10px 11px 11px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-start;text-align:left;scroll-snap-align:start;box-shadow:0 4px 10px rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.22)}
 .kc:before{content:"";position:absolute;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.14);right:-26px;bottom:-40px}
 .kc .kt{flex:none;width:100%;display:flex;justify-content:space-between;align-items:flex-start;position:relative}
@@ -2022,13 +2030,30 @@ function ubahKotak(id){
   var t = tebakKotak(k);
   bukaTambah({akun:S.me, jenis:t.jenis, jumlah:t.jumlah, kantong:t.kantong, sub:t.sub, dompet:t.dompet, tanggal:t.tanggal, catatan:k.penerima || '', toko:t.toko, kotak:id});
 }
+var HARI_N = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+function kartuJatah(a){
+  var t0 = today(), dw = tglObj(t0).getDay(), rows = [];
+  kantongAkun(a).forEach(function(k){ (k.sub || []).forEach(function(sb){
+    var b = Number(sb.harian) || 0; if (!b) return;
+    if (sb.hariTt !== undefined && sb.hariTt !== '' && sb.hariTt !== null && Number(sb.hariTt) !== dw) return;
+    var v = jumlahBy(S.tx, function(t){ return t.sub === sb.id && t.jenis === 'Pengeluaran' && t.tanggal === t0 && t.akun === a; });
+    rows.push({k:k, s:sb, b:b, v:v});
+  }); });
+  if (!rows.length) return '';
+  return '<div class="card"><div class="h2r"><h3>Jatah hari ini <small class="hint" style="font-weight:600">' + HARI_N[dw] + ', ' + tglObj(t0).getDate() + ' ' + namaBulan(ym(t0)).split(' ')[0].slice(0, 3) + '</small></h3></div>' +
+    rows.map(function(x){
+      var p = Math.round(x.v / x.b * 100), sisa = x.b - x.v;
+      return '<div class="jt"><span class="jt-i">' + ico(Object.assign({}, x.s, {warna: x.s.warna || x.k.warna}), 30) + '</span><span class="jt-m"><b>' + h(x.s.nama) + '</b><span class="bar thin"><i class="' + barCls(p) + '" style="width:' + Math.min(100, p) + '%"></i></span></span>' +
+        '<span class="jt-v"><b class="num">' + (S.hide ? 'Rp••••' : singkat(x.v) + ' / ' + singkat(x.b)) + '</b><small class="' + (sisa < 0 ? 'out' : '') + '">' + (S.hide ? '' : (sisa >= 0 ? 'sisa ' + singkat(sisa) : 'lewat ' + singkat(-sisa))) + '</small></span></div>';
+    }).join('') + '</div>';
+}
 function viewHome(){
   var a = S.akun, m = S.month, sal = saldoMap();
   var total = dompetAkun(a).reduce(function(x, d){ return x + (sal[d.id] || 0); }, 0);
   var bulan = S.tx.filter(function(t){ return t.akun === a && ym(t.tanggal) === m; });
   var masuk = jumlahBy(bulan, function(t){ return t.jenis === 'Pemasukan'; });
   var keluar = jumlahBy(bulan, function(t){ return t.jenis === 'Pengeluaran'; });
-  var html = heroHome(a, total, totalTabungan(a), masuk, keluar) + '<div class="wrap lift">' + kartuKotak(a) + kartuTagihan(a);
+  var html = heroHome(a, total, totalTabungan(a), masuk, keluar) + '<div class="wrap lift">' + kartuKotak(a) + kartuTagihan(a) + kartuJatah(a);
   urutanKartu().forEach(function(x){
     if (!x.on) return;
     var c = '';
@@ -3009,6 +3034,8 @@ function editSub(kid, id){
     fields:[{k:'nama', label:'Nama sub-kategori', max:30, ph:'cth: Bensin'}, {k:'icon', label:'Ikon', type:'iconpick'},
       {k:'pindah', label:'Masuk ke kategori', type:'select', opts:pindahOpts, hint:'Ganti untuk memindahkan sub ini (beserta catatan lamanya) ke kategori lain.'},
       {k:'warna', label:'Warna (bawaan ikut kategori)', type:'color'},
+      {k:'harian', label:'Batas per hari (opsional)', type:'money', hint:'Untuk pengeluaran harian seperti makan/jajan. Muncul sebagai kartu "Jatah hari ini" di Ringkasin. Kosongkan kalau tidak perlu.'},
+      {k:'hariTt', label:'Berlaku pada', type:'select', opts:[['', 'Setiap hari'], ['1', 'Senin saja'], ['2', 'Selasa saja'], ['3', 'Rabu saja'], ['4', 'Kamis saja'], ['5', 'Jumat saja'], ['6', 'Sabtu saja'], ['0', 'Minggu saja']]},
       {k:'kata', label:'Kata kunci chat', type:'kata', hint:'cth: bensin, pertalite, isi bensin'}, {k:'ikon', label:'Atau pakai foto sendiri', type:'ikon'}],
     onSave:function(d){
       if (!wajib(d, 'nama', 'Nama')) return;
